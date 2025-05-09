@@ -21,6 +21,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton 
 } from "@/components/ui/sidebar";
+import Navbar from "./Navbar"; // Import the Navbar component
 
 const menuItems = [
   {
