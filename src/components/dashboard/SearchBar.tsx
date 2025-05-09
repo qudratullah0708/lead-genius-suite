@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Search, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
+const API_URL = "http://localhost:8000/api/search";  // Update this with your actual API URL
+
 const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -23,26 +25,38 @@ const SearchBar = () => {
     try {
       console.log("Searching for:", query);
       
-      // In a real implementation, this would make an API call to your backend
-      // which would run the Python code for Tavily and Groq
+      // Make an actual API call to the FastAPI backend
+      // In development environment, you might need to handle CORS
+      const response = await fetch(`${API_URL}?query=${encodeURIComponent(query)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
       
-      // Simulate API call with timeout
-      setTimeout(() => {
-        // Dispatch an event that the ResultsTable component can listen to
-        const searchEvent = new CustomEvent('leadSearchCompleted', { 
-          detail: { 
-            query,
-            timestamp: new Date().toISOString()
-          } 
-        });
-        window.dispatchEvent(searchEvent);
-        
-        toast.success(`Search completed for: ${query}`);
-        setIsSearching(false);
-      }, 2000);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to fetch search results');
+      }
+      
+      const data = await response.json();
+      
+      // Dispatch the search event with the actual API results
+      const searchEvent = new CustomEvent('leadSearchCompleted', { 
+        detail: { 
+          query,
+          timestamp: new Date().toISOString(),
+          results: data.results
+        } 
+      });
+      window.dispatchEvent(searchEvent);
+      
+      toast.success(`Search completed for: ${query}`);
     } catch (error) {
       console.error("Search error:", error);
-      toast.error("An error occurred during search. Please try again.");
+      toast.error(`An error occurred during search: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
       setIsSearching(false);
     }
   };
