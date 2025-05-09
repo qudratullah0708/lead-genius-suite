@@ -25,8 +25,7 @@ const SearchBar = () => {
     try {
       console.log("Searching for:", query);
       
-      // Make an actual API call to the FastAPI backend
-      // In development environment, you might need to handle CORS
+      // Make API call to the FastAPI backend
       const response = await fetch(`${API_URL}?query=${encodeURIComponent(query)}`, {
         method: 'GET',
         headers: {
@@ -36,8 +35,15 @@ const SearchBar = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to fetch search results');
+        const errorText = await response.text();
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.detail || 'Failed to fetch search results';
+        } catch (e) {
+          errorMessage = errorText || 'Failed to fetch search results';
+        }
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -52,10 +58,10 @@ const SearchBar = () => {
       });
       window.dispatchEvent(searchEvent);
       
-      toast.success(`Search completed for: ${query}`);
+      toast.success(`Found ${data.results.length} leads for: "${query}"`);
     } catch (error) {
       console.error("Search error:", error);
-      toast.error(`An error occurred during search: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSearching(false);
     }
@@ -88,7 +94,7 @@ const SearchBar = () => {
         </form>
       </div>
       <div className="text-center mt-2 text-muted-foreground text-sm">
-        Searches across LinkedIn, Google Maps, and more. Results are deduplicated automatically.
+        Searches across LinkedIn, Google Maps, and more using Tavily and Groq AI. Results are deduplicated automatically.
       </div>
     </div>
   );

@@ -5,8 +5,9 @@ import os
 from typing import Optional, List, Dict, Any
 import json
 
-# In a real implementation, we would import from your existing Python code:
-# from path.to.your.module import Scrap_News, ExtractContent
+from tavily import TavilyClient
+from groq import Groq
+from dotenv import load_dotenv
 
 app = FastAPI()
 
@@ -19,135 +20,101 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock data for demonstration - this represents what your Python functions would return
-mock_marketing_leads = [
-    {
-        "id": "6",
-        "name": "Sarah Johnson",
-        "title": "Chief Marketing Officer",
-        "company": "Anthropic AI",
-        "email": "s.johnson@anthropic.com",
-        "phone": "+1 415 555 1234",
-        "source": "Reddit",
-        "location": "San Francisco, USA"
-    },
-    {
-        "id": "7",
-        "name": "Michael Chen",
-        "title": "VP of Marketing",
-        "company": "Scale AI",
-        "email": "m.chen@scaleai.com",
-        "phone": "+1 415 555 2345",
-        "source": "LinkedIn",
-        "location": "San Francisco, USA"
-    },
-    {
-        "id": "8",
-        "name": "Emma Rodriguez",
-        "title": "Growth Marketing Director",
-        "company": "Jasper AI",
-        "email": "e.rodriguez@jasper.ai",
-        "phone": "+1 650 555 3456",
-        "source": "Apollo.io",
-        "location": "Austin, USA"
-    },
-    {
-        "id": "9", 
-        "name": "David Kim",
-        "title": "Head of Marketing",
-        "company": "Synthesia",
-        "email": "d.kim@synthesia.io",
-        "phone": "+44 20 1234 5678",
-        "source": "Google Maps",
-        "location": "London, UK"
-    },
-    {
-        "id": "10",
-        "name": "Laura Schmitt",
-        "title": "Marketing Director",
-        "company": "Runway ML",
-        "email": "l.schmitt@runwayml.com",
-        "phone": "+1 212 555 7890",
-        "source": "Apollo.io",
-        "location": "New York, USA"
-    }
-]
+# Load environment variables
+load_dotenv()
 
-mock_realtor_leads = [
-    {
-        "id": "1",
-        "name": "John Smith",
-        "title": "Senior Realtor",
-        "company": "Berlin Properties Ltd",
-        "email": "john.smith@berlinprops.com",
-        "phone": "+49 30 12345678",
-        "source": "LinkedIn",
-        "location": "Berlin, Germany"
-    },
-    {
-        "id": "2",
-        "name": "Anna Weber",
-        "title": "Real Estate Agent",
-        "company": "City Homes Berlin",
-        "email": "anna.weber@cityhomes.de",
-        "phone": "+49 30 87654321",
-        "source": "Google Maps",
-        "location": "Berlin, Germany"
-    },
-    {
-        "id": "3",
-        "name": "Markus Bauer",
-        "title": "Property Consultant",
-        "company": "Luxury Real Estate Berlin",
-        "email": "m.bauer@luxury-berlin.de",
-        "phone": "+49 30 45678901",
-        "source": "Apollo.io",
-        "location": "Berlin, Germany"
-    },
-    {
-        "id": "4",
-        "name": "Sarah Schmidt",
-        "title": "Realtor",
-        "company": "Berlin Properties Ltd",
-        "email": "s.schmidt@berlinprops.com",
-        "phone": "+49 30 56789012",
-        "source": "LinkedIn",
-        "location": "Berlin, Germany"
-    },
-    {
-        "id": "5",
-        "name": "Thomas Müller",
-        "title": "Real Estate Agent",
-        "company": "Berlin Immobilien AG",
-        "email": "thomas.mueller@immobilien-berlin.de",
-        "phone": "+49 30 67890123",
-        "source": "Google Maps",
-        "location": "Berlin, Germany"
-    }
-]
+# Get API keys
+model_api_key = os.getenv("GROQ_API_KEY")
+tavily_api_key = os.getenv("TAVILY_API_KEY")
 
-# In a real implementation, this function would call your Python functions
-def process_search_query(query: str) -> List[Dict[str, Any]]:
-    """
-    This would be where your actual Python processing happens
-    In a real implementation, you would call:
+# Initialize clients if API keys are available
+tavily_client = None
+groq_client = None
+
+if tavily_api_key:
+    tavily_client = TavilyClient(api_key=tavily_api_key)
+
+if model_api_key:
+    groq_client = Groq(api_key=model_api_key)
+
+def Scrap_News(topic: str):
+    """Fetch latest news on a topic using Tavily API"""
+    if not tavily_client:
+        raise ValueError("Tavily API key is missing. Set TAVILY_API_KEY in your .env file.")
     
-    retrieved_content = Scrap_News(query)
-    final_result = ExtractContent(retrieved_content)
-    leads = parse_leads_from_result(final_result)
-    return leads
-    """
-    # For now, we'll return mock data based on the query
-    if any(keyword in query.lower() for keyword in ['market', 'ai', 'saas', 'startup']):
-        return mock_marketing_leads
-    else:
-        return mock_realtor_leads
+    print(f"Fetching Latest News for: {topic}...")
+    response = tavily_client.search(topic)
+    
+    if not response or "results" not in response:
+        raise ValueError("Invalid response from Tavily API.")
+    
+    retrieved_content = "\n".join(
+        [result["content"] for result in response.get("results", []) if "content" in result]
+    )
+    return retrieved_content
 
+def ExtractContent(content):
+    """Extract and structure content using Groq API"""
+    if not groq_client:
+        raise ValueError("Groq API key is missing. Set GROQ_API_KEY in your .env file.")
+    
+    prompt = f"""
+You are an expert data extraction and formatting assistant. Your task is to process raw web-scraped content and transform it into a structured, readable format for further analysis or presentation.
+
+**Input Content:**
+{content}
+
+**Instructions:**
+1. Extract leads from the content, focusing on individuals in marketing, sales, or leadership roles at companies.
+2. Structure the data into a JSON format with these fields: name, title, company, email (use a reasonable guess based on name+company if not available), phone (if available, otherwise empty), source (the source of this lead), and location (if available, otherwise empty).
+3. Only include leads that have at least a name, title, and company.
+4. Aim to provide at least 5 leads if possible, but focus on quality over quantity.
+5. Format as a valid JSON array of lead objects.
+
+Example output format:
+[
+  {{
+    "name": "John Smith",
+    "title": "Chief Marketing Officer",
+    "company": "AI Solutions Inc",
+    "email": "j.smith@aisolutions.com",
+    "phone": "",
+    "source": "LinkedIn",
+    "location": "San Francisco, USA"
+  }},
+  // more leads...
+]
+
+Now, process the provided content according to the above instructions.
+"""
+
+    print("\n\n********Extracting Meaningful Insights******...")
+    
+    completion = groq_client.chat.completions.create(
+        model="deepseek-r1-distill-llama-70b",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    response = completion.choices[0].message.content
+    # Extract just the JSON part if there's explanatory text
+    try:
+        import re
+        json_match = re.search(r'\[.*\]', response, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            leads = json.loads(json_str)
+            return leads
+        else:
+            # Try parsing the entire response as JSON
+            return json.loads(response)
+    except json.JSONDecodeError:
+        # If JSON parsing fails, return the raw response
+        print("Failed to parse JSON from response")
+        return {"error": "Failed to parse leads data", "raw_response": response}
 
 @app.get("/")
 async def root():
     return {"message": "LeadGen API is running"}
-
 
 @app.get("/api/search")
 async def search(query: str):
@@ -155,24 +122,40 @@ async def search(query: str):
         raise HTTPException(status_code=400, detail="Search query cannot be empty")
     
     try:
+        # Check if API keys are available
+        if not tavily_api_key or not model_api_key:
+            raise ValueError("API keys are missing. Make sure both TAVILY_API_KEY and GROQ_API_KEY are set in your .env file.")
+        
         # Log the search query
         print(f"Processing search query: {query}")
         
-        # Get results - in production, this would call your Python functions
-        results = process_search_query(query)
+        # Get raw content from Tavily
+        retrieved_content = Scrap_News(query)
         
-        return {
-            "success": True,
-            "query": query,
-            "timestamp": "2025-05-09T00:00:00Z",  # In production, use real timestamp
-            "results": results
-        }
+        # Extract and structure data using Groq
+        results = ExtractContent(retrieved_content)
+        
+        if isinstance(results, list):
+            # Add IDs to the results if they don't have them
+            for i, lead in enumerate(results):
+                if "id" not in lead:
+                    lead["id"] = str(i + 1)
+            
+            return {
+                "success": True,
+                "query": query,
+                "timestamp": "2025-05-09T00:00:00Z",
+                "results": results
+            }
+        else:
+            # If we got an error or non-list response
+            raise HTTPException(status_code=500, detail=f"Failed to extract leads: {results}")
+            
     except Exception as e:
         print(f"Error processing search query: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing search query: {str(e)}")
 
-
-# In a production environment, you would add these lines:
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+# For development:
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

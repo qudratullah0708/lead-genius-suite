@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,116 +24,8 @@ interface Lead {
   location: string;
 }
 
-// Mock data for initial display
-const mockLeads = [
-  {
-    id: "1",
-    name: "John Smith",
-    title: "Senior Realtor",
-    company: "Berlin Properties Ltd",
-    email: "john.smith@berlinprops.com",
-    phone: "+49 30 12345678",
-    source: "LinkedIn",
-    location: "Berlin, Germany"
-  },
-  {
-    id: "2",
-    name: "Anna Weber",
-    title: "Real Estate Agent",
-    company: "City Homes Berlin",
-    email: "anna.weber@cityhomes.de",
-    phone: "+49 30 87654321",
-    source: "Google Maps",
-    location: "Berlin, Germany"
-  },
-  {
-    id: "3",
-    name: "Markus Bauer",
-    title: "Property Consultant",
-    company: "Luxury Real Estate Berlin",
-    email: "m.bauer@luxury-berlin.de",
-    phone: "+49 30 45678901",
-    source: "Apollo.io",
-    location: "Berlin, Germany"
-  },
-  {
-    id: "4",
-    name: "Sarah Schmidt",
-    title: "Realtor",
-    company: "Berlin Properties Ltd",
-    email: "s.schmidt@berlinprops.com",
-    phone: "+49 30 56789012",
-    source: "LinkedIn",
-    location: "Berlin, Germany"
-  },
-  {
-    id: "5",
-    name: "Thomas Müller",
-    title: "Real Estate Agent",
-    company: "Berlin Immobilien AG",
-    email: "thomas.mueller@immobilien-berlin.de",
-    phone: "+49 30 67890123",
-    source: "Google Maps",
-    location: "Berlin, Germany"
-  }
-];
-
-// AI-generated data for marketing leaders/companies
-const aiGeneratedLeads = [
-  {
-    id: "6",
-    name: "Sarah Johnson",
-    title: "Chief Marketing Officer",
-    company: "Anthropic AI",
-    email: "s.johnson@anthropic.com",
-    phone: "+1 415 555 1234",
-    source: "Reddit",
-    location: "San Francisco, USA"
-  },
-  {
-    id: "7",
-    name: "Michael Chen",
-    title: "VP of Marketing",
-    company: "Scale AI",
-    email: "m.chen@scaleai.com",
-    phone: "+1 415 555 2345",
-    source: "LinkedIn",
-    location: "San Francisco, USA"
-  },
-  {
-    id: "8",
-    name: "Emma Rodriguez",
-    title: "Growth Marketing Director",
-    company: "Jasper AI",
-    email: "e.rodriguez@jasper.ai",
-    phone: "+1 650 555 3456",
-    source: "Apollo.io",
-    location: "Austin, USA"
-  },
-  {
-    id: "9",
-    name: "David Kim",
-    title: "Head of Marketing",
-    company: "Synthesia",
-    email: "d.kim@synthesia.io",
-    phone: "+44 20 1234 5678",
-    source: "Google Maps",
-    location: "London, UK"
-  },
-  {
-    id: "10",
-    name: "Laura Schmitt",
-    title: "Marketing Director",
-    company: "Runway ML",
-    email: "l.schmitt@runwayml.com",
-    phone: "+1 212 555 7890",
-    source: "Apollo.io",
-    location: "New York, USA"
-  }
-];
-
 const ResultsTable = () => {
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
@@ -144,84 +37,17 @@ const ResultsTable = () => {
       setIsLoading(true);
       setLastSearchQuery(query);
       
-      // If we have results from the API, use them
-      if (results) {
-        setTimeout(() => {
+      setTimeout(() => {
+        if (results && Array.isArray(results)) {
           setLeads(results);
-          toast.success(`Found ${results.length} leads for "${query}"`);
           setIsLoading(false);
-        }, 500); // Small delay for UX
-      } else {
-        // Fallback to mock data if no results from API
-        setTimeout(() => {
-          // Check if the query is marketing related (fallback logic)
-          if (query.toLowerCase().includes('market') || 
-              query.toLowerCase().includes('ai') || 
-              query.toLowerCase().includes('saas') ||
-              query.toLowerCase().includes('startup')) {
-            // Use marketing leads data
-            const marketingLeads = [
-              {
-                id: "6",
-                name: "Sarah Johnson",
-                title: "Chief Marketing Officer",
-                company: "Anthropic AI",
-                email: "s.johnson@anthropic.com",
-                phone: "+1 415 555 1234",
-                source: "Reddit",
-                location: "San Francisco, USA"
-              },
-              {
-                id: "7",
-                name: "Michael Chen",
-                title: "VP of Marketing",
-                company: "Scale AI",
-                email: "m.chen@scaleai.com",
-                phone: "+1 415 555 2345",
-                source: "LinkedIn",
-                location: "San Francisco, USA"
-              },
-              {
-                id: "8",
-                name: "Emma Rodriguez",
-                title: "Growth Marketing Director",
-                company: "Jasper AI",
-                email: "e.rodriguez@jasper.ai",
-                phone: "+1 650 555 3456",
-                source: "Apollo.io",
-                location: "Austin, USA"
-              },
-              {
-                id: "9",
-                name: "David Kim",
-                title: "Head of Marketing",
-                company: "Synthesia",
-                email: "d.kim@synthesia.io",
-                phone: "+44 20 1234 5678",
-                source: "Google Maps",
-                location: "London, UK"
-              },
-              {
-                id: "10",
-                name: "Laura Schmitt",
-                title: "Marketing Director",
-                company: "Runway ML",
-                email: "l.schmitt@runwayml.com",
-                phone: "+1 212 555 7890",
-                source: "Apollo.io",
-                location: "New York, USA"
-              }
-            ];
-            setLeads(marketingLeads);
-            toast.success(`Found ${marketingLeads.length} leads for "${query}"`);
-          } else {
-            // For other queries use the default mock data
-            setLeads(mockLeads);
-            toast.success(`Found ${mockLeads.length} leads for "${query}"`);
-          }
+        } else {
+          console.error("Invalid search results format:", results);
+          toast.error("Received invalid results format from search API");
+          setLeads([]);
           setIsLoading(false);
-        }, 1000);
-      }
+        }
+      }, 300); // Small delay for UX
     };
 
     window.addEventListener('leadSearchCompleted', handleSearch as EventListener);
@@ -230,6 +56,46 @@ const ResultsTable = () => {
       window.removeEventListener('leadSearchCompleted', handleSearch as EventListener);
     };
   }, []);
+
+  const handleExport = () => {
+    if (leads.length === 0) {
+      toast.error("No leads to export");
+      return;
+    }
+
+    try {
+      // Convert leads to CSV
+      const headers = ["Name", "Title", "Company", "Email", "Phone", "Source", "Location"];
+      const csvContent = [
+        headers.join(","),
+        ...leads.map(lead => [
+          `"${lead.name}"`,
+          `"${lead.title}"`,
+          `"${lead.company}"`,
+          `"${lead.email}"`,
+          `"${lead.phone}"`,
+          `"${lead.source}"`,
+          `"${lead.location}"`
+        ].join(","))
+      ].join("\n");
+      
+      // Create a Blob and download link
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `leads_${lastSearchQuery.replace(/\s+/g, "_")}_${Date.now()}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Leads exported successfully");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export leads");
+    }
+  };
 
   return (
     <div className="bg-card border rounded-lg shadow-sm">
@@ -251,7 +117,12 @@ const ResultsTable = () => {
             <Filter size={14} className="mr-1" />
             Filter
           </Button>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExport}
+            disabled={leads.length === 0}
+          >
             <FileText size={14} className="mr-1" />
             Export
           </Button>
@@ -262,6 +133,17 @@ const ResultsTable = () => {
           <div className="flex items-center justify-center p-12">
             <Loader size={24} className="animate-spin mr-2" />
             <span>Fetching leads...</span>
+          </div>
+        ) : leads.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            {lastSearchQuery ? (
+              <>
+                <p>No leads found for "{lastSearchQuery}"</p>
+                <p className="text-sm mt-1">Try a different search query</p>
+              </>
+            ) : (
+              <p>Use the search bar above to find leads</p>
+            )}
           </div>
         ) : (
           <Table>
@@ -287,10 +169,11 @@ const ResultsTable = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <div className={`w-2 h-2 rounded-full mr-2 ${
-                        lead.source === "LinkedIn" ? "bg-[#0077B5]" :
-                        lead.source === "Google Maps" ? "bg-[#34A853]" :
-                        lead.source === "Apollo.io" ? "bg-[#6366F1]" :
-                        lead.source === "Reddit" ? "bg-[#FF4500]" :
+                        lead.source?.toLowerCase().includes("linkedin") ? "bg-[#0077B5]" :
+                        lead.source?.toLowerCase().includes("google") ? "bg-[#34A853]" :
+                        lead.source?.toLowerCase().includes("apollo") ? "bg-[#6366F1]" :
+                        lead.source?.toLowerCase().includes("reddit") ? "bg-[#FF4500]" :
+                        lead.source?.toLowerCase().includes("twitter") ? "bg-[#1DA1F2]" :
                         "bg-gray-400"
                       }`}></div>
                       {lead.source}
