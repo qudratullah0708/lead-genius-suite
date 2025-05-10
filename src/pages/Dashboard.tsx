@@ -16,6 +16,11 @@ const Dashboard = () => {
       
       <SearchBar />
       
+      <div>
+        <h2 className="text-xl font-semibold mb-3">Latest Results</h2>
+        <ResultsTable />
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="md:col-span-3">
           <h2 className="text-xl font-semibold mb-3">Lead Scrapers</h2>
@@ -24,11 +29,6 @@ const Dashboard = () => {
         <div className="md:col-span-1">
           <SearchHistory />
         </div>
-      </div>
-      
-      <div>
-        <h2 className="text-xl font-semibold mb-3">Latest Results</h2>
-        <ResultsTable />
       </div>
     </div>
   );

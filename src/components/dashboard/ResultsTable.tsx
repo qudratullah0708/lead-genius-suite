@@ -9,8 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Filter, Loader } from "lucide-react";
+import { FileText, Filter, Loader, X } from "lucide-react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 // Define the lead type
 interface Lead {
@@ -26,9 +28,15 @@ interface Lead {
 
 const ResultsTable = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
+  
+  // Filter states
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
 
   useEffect(() => {
     // Listen for search events from SearchBar component
@@ -37,14 +45,23 @@ const ResultsTable = () => {
       setIsLoading(true);
       setLastSearchQuery(query);
       
+      // Clear previous results
+      setLeads([]);
+      setFilteredLeads([]);
+      setCompanyFilter("");
+      setSourceFilter("");
+      setLocationFilter("");
+      
       setTimeout(() => {
         if (results && Array.isArray(results)) {
           setLeads(results);
+          setFilteredLeads(results);
           setIsLoading(false);
         } else {
           console.error("Invalid search results format:", results);
           toast.error("Received invalid results format from search API");
           setLeads([]);
+          setFilteredLeads([]);
           setIsLoading(false);
         }
       }, 300); // Small delay for UX
@@ -57,8 +74,35 @@ const ResultsTable = () => {
     };
   }, []);
 
+  // Apply filters whenever filter criteria change
+  useEffect(() => {
+    if (leads.length === 0) return;
+    
+    let filtered = [...leads];
+    
+    if (companyFilter) {
+      filtered = filtered.filter(lead => 
+        lead.company.toLowerCase().includes(companyFilter.toLowerCase())
+      );
+    }
+    
+    if (sourceFilter) {
+      filtered = filtered.filter(lead => 
+        lead.source.toLowerCase().includes(sourceFilter.toLowerCase())
+      );
+    }
+    
+    if (locationFilter) {
+      filtered = filtered.filter(lead => 
+        lead.location.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
+    
+    setFilteredLeads(filtered);
+  }, [leads, companyFilter, sourceFilter, locationFilter]);
+
   const handleExport = () => {
-    if (leads.length === 0) {
+    if (filteredLeads.length === 0) {
       toast.error("No leads to export");
       return;
     }
@@ -68,7 +112,7 @@ const ResultsTable = () => {
       const headers = ["Name", "Title", "Company", "Email", "Phone", "Source", "Location"];
       const csvContent = [
         headers.join(","),
-        ...leads.map(lead => [
+        ...filteredLeads.map(lead => [
           `"${lead.name}"`,
           `"${lead.title}"`,
           `"${lead.company}"`,
@@ -97,6 +141,12 @@ const ResultsTable = () => {
     }
   };
 
+  const clearFilters = () => {
+    setCompanyFilter("");
+    setSourceFilter("");
+    setLocationFilter("");
+  };
+
   return (
     <div className="bg-card border rounded-lg shadow-sm">
       <div className="p-4 flex justify-between items-center border-b">
@@ -115,26 +165,81 @@ const ResultsTable = () => {
             onClick={() => setIsFiltering(!isFiltering)}
           >
             <Filter size={14} className="mr-1" />
-            Filter
+            {isFiltering ? "Hide Filters" : "Filter"}
           </Button>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleExport}
-            disabled={leads.length === 0}
+            disabled={filteredLeads.length === 0}
           >
             <FileText size={14} className="mr-1" />
             Export
           </Button>
         </div>
       </div>
+      
+      {isFiltering && (
+        <div className="p-4 border-b bg-muted/30">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col gap-1.5 flex-1 min-w-[180px]">
+              <Label htmlFor="company-filter">Company</Label>
+              <Input
+                id="company-filter"
+                value={companyFilter}
+                onChange={(e) => setCompanyFilter(e.target.value)}
+                placeholder="Filter by company..."
+                className="h-8"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1 min-w-[180px]">
+              <Label htmlFor="source-filter">Source</Label>
+              <Input
+                id="source-filter"
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                placeholder="Filter by source..."
+                className="h-8"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1 min-w-[180px]">
+              <Label htmlFor="location-filter">Location</Label>
+              <Input
+                id="location-filter"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                placeholder="Filter by location..."
+                className="h-8"
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="h-8"
+              >
+                <X size={14} className="mr-1" />
+                Clear
+              </Button>
+            </div>
+          </div>
+          
+          {companyFilter || sourceFilter || locationFilter ? (
+            <div className="mt-2 text-sm text-muted-foreground">
+              Showing {filteredLeads.length} of {leads.length} leads
+            </div>
+          ) : null}
+        </div>
+      )}
+      
       <div className="overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <Loader size={24} className="animate-spin mr-2" />
             <span>Fetching leads...</span>
           </div>
-        ) : leads.length === 0 ? (
+        ) : filteredLeads.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {lastSearchQuery ? (
               <>
@@ -159,7 +264,7 @@ const ResultsTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leads.map((lead) => (
+              {filteredLeads.map((lead) => (
                 <TableRow key={lead.id}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>{lead.title}</TableCell>

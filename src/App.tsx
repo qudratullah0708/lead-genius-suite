@@ -9,6 +9,9 @@ import Dashboard from "./pages/Dashboard";
 import ScraperPage from "./pages/ScraperPage";
 import NotFound from "./pages/NotFound";
 import SidebarLayout from "./components/layout/Sidebar";
+import About from "./pages/About";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +33,9 @@ const App = () => (
               <ScraperPage />
             </SidebarLayout>
           } />
+          <Route path="/about" element={<About />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
