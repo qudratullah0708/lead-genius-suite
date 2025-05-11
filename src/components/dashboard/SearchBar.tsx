@@ -6,7 +6,7 @@ import { Search, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 // const API_URL = "http://localhost:8000/api/search";  // Update this with your actual API URL
-   const API_URL = "https://vercel-test-phi-three.vercel.app/";
+   const API_URL = "https://vercel-test-phi-three.vercel.app/api/search";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
