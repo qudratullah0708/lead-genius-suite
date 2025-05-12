@@ -6,9 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ResultsTable from "@/components/dashboard/ResultsTable";
+import { useAuth } from "@/context/AuthContext";
 
 const ScraperPage = () => {
   const { scraperId } = useParams();
+  const { user } = useAuth();
 
   // Convert the scraperID to a properly formatted name
   const getScraperName = (id: string | undefined) => {

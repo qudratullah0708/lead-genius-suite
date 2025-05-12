@@ -1,29 +1,18 @@
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, History } from "lucide-react";
+import { ArrowRight, History, Loader } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for demonstration
-const mockSearchHistory = [
-  {
-    id: "1",
-    query: "Realtors in Berlin",
-    date: "2025-05-09T10:30:00Z",
-    results: 147,
-  },
-  {
-    id: "2",
-    query: "Software engineers in San Francisco",
-    date: "2025-05-08T15:45:00Z",
-    results: 258,
-  },
-  {
-    id: "3",
-    query: "Marketing managers in London",
-    date: "2025-05-07T09:15:00Z",
-    results: 126,
-  }
-];
+interface SearchHistoryItem {
+  id: string;
+  query: string;
+  timestamp: string;
+  result_count: number;
+}
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -36,6 +25,33 @@ const formatDate = (dateString: string) => {
 };
 
 const SearchHistory = () => {
+  const [history, setHistory] = useState<SearchHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchSearchHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('search_history')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setHistory(data || []);
+      } catch (error) {
+        console.error("Error fetching search history:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSearchHistory();
+  }, [user]);
+
   return (
     <div className="leadgen-card">
       <div className="leadgen-card-header">
@@ -51,19 +67,35 @@ const SearchHistory = () => {
         </Button>
       </div>
       <div className="space-y-3">
-        {mockSearchHistory.map((item) => (
-          <div key={item.id} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50">
-            <div>
-              <div className="font-medium">{item.query}</div>
-              <div className="text-xs text-muted-foreground">
-                {formatDate(item.date)} · {item.results} results
+        {isLoading ? (
+          Array(3).fill(0).map((_, i) => (
+            <div key={i} className="flex justify-between items-center p-2">
+              <div className="w-full">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2" />
               </div>
             </div>
-            <Button variant="ghost" size="sm" className="h-8">
-              <ArrowRight size={14} />
-            </Button>
+          ))
+        ) : history.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            <p>No search history yet</p>
+            <p className="text-xs mt-1">Your recent searches will appear here</p>
           </div>
-        ))}
+        ) : (
+          history.map((item) => (
+            <div key={item.id} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50">
+              <div>
+                <div className="font-medium">{item.query}</div>
+                <div className="text-xs text-muted-foreground">
+                  {formatDate(item.timestamp)} · {item.result_count} results
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8">
+                <ArrowRight size={14} />
+              </Button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

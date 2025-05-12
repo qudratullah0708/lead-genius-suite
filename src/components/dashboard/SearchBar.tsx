@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 // const API_URL = "http://localhost:8000/api/search";  // Update this with your actual API URL
-   const API_URL = "https://vercel-test-phi-three.vercel.app/api/search";
+const API_URL = "https://vercel-test-phi-three.vercel.app/api/search";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,18 +51,53 @@ const SearchBar = () => {
       }
       
       const data = await response.json();
+      const results = data.results || [];
+      
+      // Store the search in search history
+      if (user) {
+        try {
+          await supabase.from('search_history').insert({
+            user_id: user.id,
+            query: query,
+            result_count: results.length
+          });
+        } catch (error) {
+          console.error("Failed to save search history:", error);
+        }
+      }
+
+      // Store each search result in the leads table
+      if (user && results.length > 0) {
+        try {
+          const leadsToInsert = results.map((lead: any) => ({
+            user_id: user.id,
+            query: query,
+            name: lead.name || null,
+            title: lead.title || null,
+            company: lead.company || null,
+            email: lead.email || null,
+            phone: lead.phone || null,
+            source: lead.source || null,
+            location: lead.location || null
+          }));
+          
+          await supabase.from('leads').insert(leadsToInsert);
+        } catch (error) {
+          console.error("Failed to save leads:", error);
+        }
+      }
       
       // Dispatch the search event with the actual API results
       const searchEvent = new CustomEvent('leadSearchCompleted', { 
         detail: { 
           query,
           timestamp: new Date().toISOString(),
-          results: data.results
+          results: results
         } 
       });
       window.dispatchEvent(searchEvent);
       
-      toast.success(`Found ${data.results.length} leads for: "${query}"`);
+      toast.success(`Found ${results.length} leads for: "${query}"`);
     } catch (error) {
       console.error("Search error:", error);
       toast.error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);

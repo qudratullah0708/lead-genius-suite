@@ -9,7 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          company: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          location: string | null
+          name: string | null
+          phone: string | null
+          query: string
+          source: string | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          location?: string | null
+          name?: string | null
+          phone?: string | null
+          query: string
+          source?: string | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          location?: string | null
+          name?: string | null
+          phone?: string | null
+          query?: string
+          source?: string | null
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      search_history: {
+        Row: {
+          id: string
+          query: string
+          result_count: number | null
+          timestamp: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          query: string
+          result_count?: number | null
+          timestamp?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          query?: string
+          result_count?: number | null
+          timestamp?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

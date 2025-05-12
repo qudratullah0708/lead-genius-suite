@@ -13,6 +13,8 @@ import { FileText, Filter, Loader, X } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/AuthContext";
 
 // Define the lead type
 interface Lead {
@@ -32,6 +34,7 @@ const ResultsTable = () => {
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
+  const { user } = useAuth();
   
   // Filter states
   const [companyFilter, setCompanyFilter] = useState("");
@@ -82,19 +85,19 @@ const ResultsTable = () => {
     
     if (companyFilter) {
       filtered = filtered.filter(lead => 
-        lead.company.toLowerCase().includes(companyFilter.toLowerCase())
+        lead.company?.toLowerCase().includes(companyFilter.toLowerCase())
       );
     }
     
     if (sourceFilter) {
       filtered = filtered.filter(lead => 
-        lead.source.toLowerCase().includes(sourceFilter.toLowerCase())
+        lead.source?.toLowerCase().includes(sourceFilter.toLowerCase())
       );
     }
     
     if (locationFilter) {
       filtered = filtered.filter(lead => 
-        lead.location.toLowerCase().includes(locationFilter.toLowerCase())
+        lead.location?.toLowerCase().includes(locationFilter.toLowerCase())
       );
     }
     
@@ -113,13 +116,13 @@ const ResultsTable = () => {
       const csvContent = [
         headers.join(","),
         ...filteredLeads.map(lead => [
-          `"${lead.name}"`,
-          `"${lead.title}"`,
-          `"${lead.company}"`,
-          `"${lead.email}"`,
-          `"${lead.phone}"`,
-          `"${lead.source}"`,
-          `"${lead.location}"`
+          `"${lead.name || ''}"`,
+          `"${lead.title || ''}"`,
+          `"${lead.company || ''}"`,
+          `"${lead.email || ''}"`,
+          `"${lead.phone || ''}"`,
+          `"${lead.source || ''}"`,
+          `"${lead.location || ''}"`
         ].join(","))
       ].join("\n");
       
@@ -146,6 +149,19 @@ const ResultsTable = () => {
     setSourceFilter("");
     setLocationFilter("");
   };
+
+  const renderLoadingState = () => (
+    <div className="p-4">
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 bg-muted/30 rounded"></div>
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 bg-muted/30 rounded"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="bg-card border rounded-lg shadow-sm">
@@ -236,8 +252,8 @@ const ResultsTable = () => {
       <div className="overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center p-12">
-            <Loader size={24} className="animate-spin mr-2" />
-            <span>Fetching leads...</span>
+            <Loader size={24} className="animate-spin mr-2 text-leadgen-primary" />
+            <span className="text-leadgen-primary font-medium">Fetching leads...</span>
           </div>
         ) : filteredLeads.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
