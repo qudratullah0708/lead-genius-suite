@@ -55,6 +55,9 @@ const EmailReportButton = ({
 
     setIsSending(true);
     try {
+      // Ensure CSV is always attached
+      const csvContent = getCsvContent(leads);
+      
       // Format data for the API
       const emailData = {
         recipient_email: recipient,
@@ -63,11 +66,11 @@ const EmailReportButton = ({
         user_email: user?.email,
         leads: leads,
         query: searchQuery,
-        attachCsv: attachCsv,
-        csvContent: attachCsv ? getCsvContent(leads) : null
+        attachCsv: true, // Always attach CSV
+        csvContent: csvContent
       };
 
-      // Call your FastAPI endpoint
+      // Call the FastAPI endpoint
       const response = await fetch("http://localhost:8000/send-email", {
         method: "POST",
         headers: {

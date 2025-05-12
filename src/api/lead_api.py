@@ -213,7 +213,7 @@ async def send_email(data: Dict[str, Any] = Body(...)):
         # Create the email
         email = EmailMessage()
         email["Subject"] = subject
-        email["From"] = "leadgen-reports@example.com"  # Replace with your email
+        email["From"] = "qudratullah0708@gmail.com"  # Updated sender email
         email["To"] = recipient_email
         
         # Create HTML content
@@ -300,7 +300,7 @@ async def send_email(data: Dict[str, Any] = Body(...)):
         
         # Send the email
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login("your-email@gmail.com", email_password)  # Replace with your Gmail
+            smtp.login("qudratullah0708@gmail.com", email_password)  # Updated login email
             smtp.send_message(email)
         
         return {"message": "Email sent successfully"}
