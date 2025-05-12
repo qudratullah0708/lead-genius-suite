@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -202,6 +201,8 @@ async def send_email(data: Dict[str, Any] = Body(...)):
         user_email = data.get("user_email")
         leads = data.get("leads", [])
         query = data.get("query", "")
+        attach_csv = data.get("attachCsv", False)
+        csv_content = data.get("csvContent", "")
         
         if not recipient_email or not subject:
             raise HTTPException(status_code=400, detail="Recipient email and subject are required")
@@ -286,6 +287,16 @@ async def send_email(data: Dict[str, Any] = Body(...)):
         # Set the email content
         email.set_content(message)
         email.add_alternative(html_content, subtype="html")
+        
+        # Attach CSV if requested
+        if attach_csv and csv_content:
+            csv_attachment = csv_content.encode()
+            email.add_attachment(
+                csv_attachment,
+                maintype="text",
+                subtype="csv",
+                filename=f"leads_{query.replace(' ', '_')}_{len(leads)}_results.csv"
+            )
         
         # Send the email
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:

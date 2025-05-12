@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight } from "lucide-react";
@@ -15,6 +15,26 @@ const SearchBar = () => {
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
 
+  useEffect(() => {
+    // Listen for rerunSearch events from SearchHistory
+    const handleRerunSearch = (event: CustomEvent) => {
+      const { query } = event.detail;
+      setQuery(query);
+      
+      // Automatically submit the search
+      const searchForm = document.getElementById('search-form') as HTMLFormElement;
+      if (searchForm) {
+        searchForm.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    };
+
+    window.addEventListener('rerunSearch', handleRerunSearch as EventListener);
+    
+    return () => {
+      window.removeEventListener('rerunSearch', handleRerunSearch as EventListener);
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -23,7 +43,15 @@ const SearchBar = () => {
       return;
     }
     
+    // Start loading immediately
     setIsSearching(true);
+    
+    // Dispatch a preliminary search event to trigger the loader in ResultsTable
+    const searchStartEvent = new CustomEvent('leadSearchStarted', {
+      detail: { query }
+    });
+    window.dispatchEvent(searchStartEvent);
+    
     toast.info(`Searching for: ${query}`);
     
     try {
@@ -101,6 +129,16 @@ const SearchBar = () => {
     } catch (error) {
       console.error("Search error:", error);
       toast.error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Dispatch empty results to stop the loader
+      const searchEvent = new CustomEvent('leadSearchCompleted', { 
+        detail: { 
+          query,
+          timestamp: new Date().toISOString(),
+          results: []
+        } 
+      });
+      window.dispatchEvent(searchEvent);
     } finally {
       setIsSearching(false);
     }
@@ -112,7 +150,7 @@ const SearchBar = () => {
         <div className="px-3 text-muted-foreground">
           <Search size={20} />
         </div>
-        <form onSubmit={handleSubmit} className="flex-1 flex items-center">
+        <form id="search-form" onSubmit={handleSubmit} className="flex-1 flex items-center">
           <Input
             type="text"
             value={query}

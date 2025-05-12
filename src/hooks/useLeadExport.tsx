@@ -13,6 +13,29 @@ interface Lead {
 }
 
 export function useLeadExport() {
+  // Convert leads to CSV content as string
+  const getCsvContent = (leads: Lead[]): string => {
+    if (leads.length === 0) return "";
+    
+    const headers = ["Name", "Title", "Company", "Email", "Phone", "Source", "Location"];
+    const csvContent = [
+      headers.join(","),
+      ...leads.map((lead) =>
+        [
+          `"${lead.name || ''}"`,
+          `"${lead.title || ''}"`,
+          `"${lead.company || ''}"`,
+          `"${lead.email || ''}"`,
+          `"${lead.phone || ''}"`,
+          `"${lead.source || ''}"`,
+          `"${lead.location || ''}"`
+        ].join(",")
+      )
+    ].join("\n");
+    
+    return csvContent;
+  };
+
   const exportToCsv = (leads: Lead[], searchQuery: string) => {
     if (leads.length === 0) {
       toast.error("No leads to export");
@@ -20,22 +43,8 @@ export function useLeadExport() {
     }
 
     try {
-      // Convert leads to CSV
-      const headers = ["Name", "Title", "Company", "Email", "Phone", "Source", "Location"];
-      const csvContent = [
-        headers.join(","),
-        ...leads.map((lead) =>
-          [
-            `"${lead.name || ''}"`,
-            `"${lead.title || ''}"`,
-            `"${lead.company || ''}"`,
-            `"${lead.email || ''}"`,
-            `"${lead.phone || ''}"`,
-            `"${lead.source || ''}"`,
-            `"${lead.location || ''}"`
-          ].join(",")
-        )
-      ].join("\n");
+      // Get the CSV content
+      const csvContent = getCsvContent(leads);
       
       // Create a Blob and download link
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -55,5 +64,5 @@ export function useLeadExport() {
     }
   };
 
-  return { exportToCsv };
+  return { exportToCsv, getCsvContent };
 }

@@ -52,6 +52,14 @@ const SearchHistory = () => {
     fetchSearchHistory();
   }, [user]);
 
+  const handleSearchClick = (query: string) => {
+    // Create a custom event to trigger the search with this query
+    const searchEvent = new CustomEvent('rerunSearch', {
+      detail: { query }
+    });
+    window.dispatchEvent(searchEvent);
+  };
+
   return (
     <div className="leadgen-card">
       <div className="leadgen-card-header">
@@ -60,7 +68,7 @@ const SearchHistory = () => {
           <h3 className="leadgen-card-title">Recent Searches</h3>
         </div>
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/history" className="flex items-center">
+          <Link to="/dashboard" className="flex items-center">
             <span>View All</span>
             <ArrowRight size={14} className="ml-1" />
           </Link>
@@ -83,14 +91,19 @@ const SearchHistory = () => {
           </div>
         ) : (
           history.map((item) => (
-            <div key={item.id} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50">
-              <div>
+            <div key={item.id} className="flex justify-between items-center p-2 rounded-md hover:bg-muted/50 cursor-pointer">
+              <div onClick={() => handleSearchClick(item.query)}>
                 <div className="font-medium">{item.query}</div>
                 <div className="text-xs text-muted-foreground">
                   {formatDate(item.timestamp)} · {item.result_count} results
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="h-8">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8"
+                onClick={() => handleSearchClick(item.query)}
+              >
                 <ArrowRight size={14} />
               </Button>
             </div>

@@ -43,9 +43,9 @@ const ResultsTable = () => {
   const { exportToCsv } = useLeadExport();
 
   useEffect(() => {
-    // Listen for search events from SearchBar component
-    const handleSearch = (event: CustomEvent) => {
-      const { query, timestamp, results } = event.detail;
+    // Listen for search start event (new)
+    const handleSearchStart = (event: CustomEvent) => {
+      const { query } = event.detail;
       setIsLoading(true);
       setLastSearchQuery(query);
       
@@ -53,6 +53,12 @@ const ResultsTable = () => {
       setLeads([]);
       setFilteredLeads([]);
       clearFilters();
+    };
+    
+    // Listen for search completion event
+    const handleSearch = (event: CustomEvent) => {
+      const { query, timestamp, results } = event.detail;
+      setLastSearchQuery(query);
       
       setTimeout(() => {
         if (results && Array.isArray(results)) {
@@ -68,9 +74,11 @@ const ResultsTable = () => {
       }, 300); // Small delay for UX
     };
 
+    window.addEventListener('leadSearchStarted', handleSearchStart as EventListener);
     window.addEventListener('leadSearchCompleted', handleSearch as EventListener);
     
     return () => {
+      window.removeEventListener('leadSearchStarted', handleSearchStart as EventListener);
       window.removeEventListener('leadSearchCompleted', handleSearch as EventListener);
     };
   }, []);

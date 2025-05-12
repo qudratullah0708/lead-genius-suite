@@ -12,8 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { useLeadExport } from "@/hooks/useLeadExport";
 
 interface EmailReportButtonProps {
   leads: any[];
@@ -28,12 +30,22 @@ const EmailReportButton = ({
 }: EmailReportButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [recipient, setRecipient] = useState("");
-  const [subject, setSubject] = useState(`Lead Report: ${searchQuery}`);
-  const [message, setMessage] = useState(
-    `Here is your lead report for "${searchQuery}".\n\nTotal leads found: ${leads.length}\n\nBest regards,\nLeadGen Agent`
-  );
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [attachCsv, setAttachCsv] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const { user } = useAuth();
+  const { getCsvContent } = useLeadExport();
+
+  // Set default values when search query changes
+  React.useEffect(() => {
+    if (searchQuery) {
+      setSubject(`Lead Report: ${searchQuery}`);
+      setMessage(
+        `Here is your lead report for "${searchQuery}".\n\nTotal leads found: ${leads.length}\n\nBest regards,\nLeadGen Agent`
+      );
+    }
+  }, [searchQuery, leads.length]);
 
   const handleSendEmail = async () => {
     if (!recipient) {
@@ -46,11 +58,13 @@ const EmailReportButton = ({
       // Format data for the API
       const emailData = {
         recipient_email: recipient,
-        subject: subject,
+        subject: subject || `Lead Report: ${searchQuery}`,
         message: message,
         user_email: user?.email,
         leads: leads,
         query: searchQuery,
+        attachCsv: attachCsv,
+        csvContent: attachCsv ? getCsvContent(leads) : null
       };
 
       // Call your FastAPI endpoint
@@ -109,6 +123,7 @@ const EmailReportButton = ({
                 id="subject"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
+                placeholder={`Lead Report: ${searchQuery}`}
               />
             </div>
             <div className="space-y-2">
@@ -119,6 +134,16 @@ const EmailReportButton = ({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="attachCsv" 
+                checked={attachCsv} 
+                onCheckedChange={(checked) => setAttachCsv(checked as boolean)} 
+              />
+              <Label htmlFor="attachCsv" className="cursor-pointer">
+                Attach leads as CSV file
+              </Label>
             </div>
           </div>
           <DialogFooter>
