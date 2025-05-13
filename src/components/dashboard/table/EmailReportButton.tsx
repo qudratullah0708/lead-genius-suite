@@ -70,7 +70,7 @@ const EmailReportButton = ({
       console.log("Sending email via FastAPI endpoint");
 
       // Send email using the local FastAPI endpoint
-      const response = await fetch("http://127.0.0.1:8000/send-email", {
+      const response = await fetch("https://email-service-bice.vercel.app/send-email/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
