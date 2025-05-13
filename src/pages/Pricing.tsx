@@ -88,7 +88,9 @@ const Pricing = () => {
     setIsLoading(tier.id);
     
     try {
-      // Call the Supabase Edge Function instead of the FastAPI endpoint
+      console.log(`Initiating checkout for tier: ${tier.name}`);
+      
+      // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           priceId: tier.priceId,
@@ -98,6 +100,8 @@ const Pricing = () => {
           cancelUrl: window.location.origin + '/pricing?checkout=cancelled',
         },
       });
+
+      console.log("Edge function response:", data, error);
 
       if (error) {
         throw new Error(error.message || 'Failed to create checkout session');

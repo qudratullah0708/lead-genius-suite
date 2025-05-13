@@ -13,18 +13,25 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Get the stripe secret key from the environment
-  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-  if (!stripeKey) {
-    return new Response(
-      JSON.stringify({ error: "Stripe secret key not configured" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+  console.log("Checkout function called");
 
   try {
+    // Get the stripe secret key from the environment
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("Stripe secret key not found in environment");
+      return new Response(
+        JSON.stringify({ error: "Stripe secret key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Parsing request body");
     // Parse the request body
-    const { priceId, tierName, isTrial, successUrl, cancelUrl } = await req.json();
+    const body = await req.json();
+    const { priceId, tierName, isTrial, successUrl, cancelUrl } = body;
+
+    console.log(`Processing checkout for tier: ${tierName}, priceId: ${priceId}, isTrial: ${isTrial}`);
 
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, {
@@ -38,7 +45,7 @@ serve(async (req) => {
         price: priceId,
         quantity: 1,
       }],
-      mode: isTrial ? "subscription" : "subscription", // Always use subscription mode, but with trial for Starter
+      mode: "subscription", // Always use subscription mode
       success_url: successUrl || `${req.headers.get("origin")}/dashboard?checkout=success`,
       cancel_url: cancelUrl || `${req.headers.get("origin")}/pricing?checkout=cancelled`,
       metadata: {
@@ -48,13 +55,16 @@ serve(async (req) => {
 
     // Add trial_period_days for the starter tier if it's marked as trial
     if (isTrial) {
-      checkoutParams["subscription_data"] = {
+      console.log("Adding 14-day trial period");
+      checkoutParams.subscription_data = {
         trial_period_days: 14
       };
     }
 
+    console.log("Creating checkout session");
     // Create the checkout session
     const session = await stripe.checkout.sessions.create(checkoutParams);
+    console.log(`Checkout session created: ${session.id}`);
 
     // Return the session ID and URL
     return new Response(
@@ -62,6 +72,12 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    // Log the detailed error
+    console.error(`Checkout error: ${error.message}`);
+    if (error.stack) {
+      console.error(`Stack trace: ${error.stack}`);
+    }
+    
     // Return any errors
     return new Response(
       JSON.stringify({ error: error.message }),
