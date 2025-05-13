@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
 // const API_URL = "http://localhost:8000/api/search";  // Update this with your actual API URL
-const API_URL = "https://vercel-test-phi-three.vercel.app/api/search";
+const API_URL = "https://lead-genai-backend.vercel.app/api/search";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
