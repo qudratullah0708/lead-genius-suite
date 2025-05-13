@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
@@ -16,7 +15,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport } from "@/hooks/useLeadExport";
-import { supabase } from "@/integrations/supabase/client";
 
 interface EmailReportButtonProps {
   leads: any[];
@@ -58,8 +56,8 @@ const EmailReportButton = ({
     try {
       // Get CSV content if attachment is enabled
       const csvContent = attachCsv ? getCsvContent(leads) : '';
-      
-      // Prepare data for the edge function
+
+      // Prepare email data
       const emailData = {
         recipient_email: recipient,
         subject: subject || `Lead Report: ${searchQuery}`,
@@ -69,18 +67,23 @@ const EmailReportButton = ({
         csvContent: csvContent
       };
 
-      console.log("Sending email via Supabase Edge Function");
-      
-      // Call the Supabase edge function
-      const { data, error } = await supabase.functions.invoke('send-email-report', {
-        body: emailData
+      console.log("Sending email via FastAPI endpoint");
+
+      // Send email using the local FastAPI endpoint
+      const response = await fetch("http://127.0.0.1:8000/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(emailData),
       });
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message || "Failed to send email");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to send email");
       }
 
+      const data = await response.json();
       console.log("Email sent response:", data);
       toast.success("Email sent successfully!");
       setIsOpen(false);
@@ -138,10 +141,10 @@ const EmailReportButton = ({
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="attachCsv" 
-                checked={attachCsv} 
-                onCheckedChange={(checked) => setAttachCsv(checked as boolean)} 
+              <Checkbox
+                id="attachCsv"
+                checked={attachCsv}
+                onCheckedChange={(checked) => setAttachCsv(checked as boolean)}
               />
               <Label htmlFor="attachCsv" className="cursor-pointer">
                 Attach leads as CSV file
