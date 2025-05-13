@@ -104,6 +104,7 @@ const Pricing = () => {
       console.log("Edge function response:", data, error);
 
       if (error) {
+        console.error("Edge function error details:", error);
         throw new Error(error.message || 'Failed to create checkout session');
       }
 
