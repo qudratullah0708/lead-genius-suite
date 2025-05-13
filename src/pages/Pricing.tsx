@@ -88,6 +88,7 @@ const Pricing = () => {
     setIsLoading(tier.id);
     
     try {
+      // Call the Supabase Edge Function instead of the FastAPI endpoint
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           priceId: tier.priceId,
@@ -95,7 +96,7 @@ const Pricing = () => {
           isTrial: tier.trial,
           successUrl: window.location.origin + '/dashboard?checkout=success',
           cancelUrl: window.location.origin + '/pricing?checkout=cancelled',
-        }
+        },
       });
 
       if (error) {
