@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, X, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,12 +11,13 @@ const Pricing = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
+  // Updated prices that should match with your Stripe account
   const tiers = [
     {
       name: "Starter",
       id: "starter",
       price: "49",
-      priceId: "price_1OsREjLnUappsqgThTq7R5Mm", // Demo Stripe price ID - replace with actual
+      priceId: "price_1ROMcLRtPmhQyEQoEFwT5XuJ", // Replace with your actual price ID
       description: "Perfect for small businesses and freelancers just getting started with lead generation.",
       features: [
         "100 leads per month",
@@ -40,7 +41,7 @@ const Pricing = () => {
       name: "Professional",
       id: "professional",
       price: "149",
-      priceId: "price_1OsRFgLnUappsqgTnEeoVqYT", // Demo Stripe price ID - replace with actual
+      priceId: "price_1ROMcLRtPmhQyEQoEi1TzW9M", // Replace with your actual price ID
       description: "Ideal for growing businesses with regular lead generation needs.",
       features: [
         "500 leads per month",
@@ -64,7 +65,7 @@ const Pricing = () => {
       name: "Enterprise",
       id: "enterprise",
       price: "399",
-      priceId: "price_1OsRGBLnUappsqgTW38ogUUO", // Demo Stripe price ID - replace with actual
+      priceId: "price_1ROMcLRtPmhQyEQoEVFZl8yK", // Replace with your actual price ID
       description: "For organizations with high volume lead generation requirements.",
       features: [
         "2,000 leads per month",
@@ -83,6 +84,29 @@ const Pricing = () => {
       trial: false,
     },
   ];
+
+  // Check URL parameters for checkout status messages
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const checkoutStatus = query.get('checkout');
+    
+    if (checkoutStatus === 'success') {
+      toast({
+        title: "Subscription Successful",
+        description: "Thank you for subscribing! Your account has been upgraded.",
+      });
+      // Clear the query parameter
+      navigate('/pricing', { replace: true });
+    } else if (checkoutStatus === 'cancelled') {
+      toast({
+        title: "Checkout Cancelled",
+        description: "You can complete your subscription at any time.",
+        variant: "destructive",
+      });
+      // Clear the query parameter
+      navigate('/pricing', { replace: true });
+    }
+  }, [navigate, toast]);
 
   const handleSubscribe = async (tier: any) => {
     setIsLoading(tier.id);

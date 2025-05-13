@@ -39,7 +39,7 @@ serve(async (req) => {
     });
 
     // Configure checkout parameters
-    const checkoutParams = {
+    const checkoutParams: any = {
       payment_method_types: ["card"],
       line_items: [{
         price: priceId,

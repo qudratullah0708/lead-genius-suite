@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport } from "@/hooks/useLeadExport";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmailReportButtonProps {
   leads: any[];
@@ -55,34 +56,32 @@ const EmailReportButton = ({
 
     setIsSending(true);
     try {
-      // Ensure CSV is always attached
-      const csvContent = getCsvContent(leads);
+      // Get CSV content if attachment is enabled
+      const csvContent = attachCsv ? getCsvContent(leads) : '';
       
-      // Format data for the API
+      // Prepare data for the edge function
       const emailData = {
         recipient_email: recipient,
         subject: subject || `Lead Report: ${searchQuery}`,
         message: message,
         user_email: user?.email,
-        leads: leads,
         query: searchQuery,
-        attachCsv: true, // Always attach CSV
         csvContent: csvContent
       };
 
-      // Call the FastAPI endpoint
-      const response = await fetch("https://vercel-test-phi-three.vercel.app/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(emailData),
+      console.log("Sending email via Supabase Edge Function");
+      
+      // Call the Supabase edge function
+      const { data, error } = await supabase.functions.invoke('send-email-report', {
+        body: emailData
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to send email");
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(error.message || "Failed to send email");
       }
 
+      console.log("Email sent response:", data);
       toast.success("Email sent successfully!");
       setIsOpen(false);
     } catch (error) {
