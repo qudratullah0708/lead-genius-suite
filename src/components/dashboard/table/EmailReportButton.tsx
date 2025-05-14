@@ -57,6 +57,8 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         message,
         user_email: user?.email || "",
         query: searchQuery,
+        leads, 
+        attachCsv, 
         csvContent: attachCsv ? getCsvContent(leads) : "",
       };
 
