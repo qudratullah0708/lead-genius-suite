@@ -1,12 +1,27 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, Settings, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import NotificationsDropdown from "./NotificationsDropdown";
+import SettingsDropdown from "./SettingsDropdown";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Get user initials for avatar
+  const getInitials = () => {
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name.substring(0, 2).toUpperCase();
+    } else if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
 
   return (
     <nav className="border-b border-border bg-card py-3 px-4 flex items-center justify-between">
@@ -53,23 +68,23 @@ const Navbar = () => {
         >
           <Search className="h-5 w-5" />
         </Button>
-        <Button 
-          variant="ghost"
-          size="icon" 
-          className="text-foreground/70 hover:text-foreground"
-        >
-          <Bell className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost"
-          size="icon"
-          className="text-foreground/70 hover:text-foreground"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-        <div className="w-8 h-8 rounded-full bg-leadgen-primary text-white flex items-center justify-center ml-2">
-          <span className="font-medium text-sm">JD</span>
-        </div>
+        
+        <NotificationsDropdown />
+        
+        <SettingsDropdown />
+        
+        <Avatar className="h-8 w-8 ml-2">
+          {user?.user_metadata?.avatar_url ? (
+            <AvatarImage 
+              src={user.user_metadata.avatar_url} 
+              alt={user.user_metadata.display_name || user.email || "User"} 
+            />
+          ) : (
+            <AvatarFallback className="bg-leadgen-primary text-white">
+              {getInitials()}
+            </AvatarFallback>
+          )}
+        </Avatar>
       </div>
     </nav>
   );

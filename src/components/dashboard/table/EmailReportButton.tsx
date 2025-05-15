@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport, Lead } from "@/hooks/useLeadExport";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotifications } from "@/context/NotificationsContext";
 
 interface EmailReportButtonProps {
   leads: Lead[];
@@ -34,6 +35,7 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
   const { user } = useAuth();
   const { getCsvContent } = useLeadExport();
+  const { fetchNotifications } = useNotifications();
 
   // Automatically update subject and message based on search query or leads
   useEffect(() => {
@@ -91,6 +93,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
             lead_count: leads.length,
             status: 'delivered'
           });
+          
+        // Refresh notifications
+        await fetchNotifications();
       }
 
       toast.success("Email sent successfully!");
@@ -110,6 +115,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
             lead_count: leads.length,
             status: 'failed'
           });
+          
+        // Refresh notifications
+        await fetchNotifications();
       }
       
       toast.error("Failed to send email. Please try again.");

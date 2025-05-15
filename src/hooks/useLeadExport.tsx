@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationsContext";
 
 export interface Lead {
   id: string;
@@ -16,6 +17,7 @@ export interface Lead {
 
 export function useLeadExport() {
   const { user } = useAuth();
+  const { fetchNotifications } = useNotifications();
 
   // Convert leads to CSV content as string
   const getCsvContent = (leads: Lead[]): string => {
@@ -74,6 +76,9 @@ export function useLeadExport() {
             file_name: fileName,
             lead_count: leads.length
           });
+          
+        // Refresh notifications
+        await fetchNotifications();
       }
       
       toast.success("Leads exported successfully");
