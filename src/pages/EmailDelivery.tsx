@@ -48,13 +48,7 @@ const EmailDeliveryPage = () => {
           throw error;
         }
         
-        // Convert the data to the correct type
-        const typedData: EmailItem[] = data?.map(item => ({
-          ...item,
-          status: item.status as "delivered" | "failed"
-        })) || [];
-        
-        setEmails(typedData);
+        setEmails(data || []);
       } catch (error) {
         console.error("Error fetching emails:", error);
         toast.error("Failed to load email history");
