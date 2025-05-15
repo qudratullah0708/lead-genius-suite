@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Mail } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import useRequireAuth from "@/hooks/useRequireAuth";
 
 interface EmailItem {
   id: string;
@@ -13,8 +12,6 @@ interface EmailItem {
   subject: string;
   timestamp: string;
   status: "delivered" | "failed";
-  query: string;
-  lead_count: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -28,27 +25,44 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
+// For demo purposes only - in a real app, this would come from the database
+const mockEmails = [
+  {
+    id: "1",
+    recipient: "client@example.com",
+    subject: "Lead Report: marketing agencies",
+    timestamp: new Date().toISOString(),
+    status: "delivered" as const
+  },
+  {
+    id: "2",
+    recipient: "boss@company.com",
+    subject: "Lead Report: tech startups",
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    status: "delivered" as const
+  },
+  {
+    id: "3",
+    recipient: "team@ourcompany.com",
+    subject: "Weekly Lead Report",
+    timestamp: new Date(Date.now() - 172800000).toISOString(),
+    status: "failed" as const
+  }
+];
+
 const EmailDeliveryPage = () => {
   const [emails, setEmails] = useState<EmailItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useRequireAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
+    // This is a placeholder for actual database fetching
+    // In a real application, you would fetch from Supabase here
     const fetchEmails = async () => {
-      if (!user) return;
-      
       try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('email_history')
-          .select('*')
-          .order('timestamp', { ascending: false });
-          
-        if (error) {
-          throw error;
-        }
-        
-        setEmails(data || []);
+        // Simulating API call with timeout
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setEmails(mockEmails);
       } catch (error) {
         console.error("Error fetching emails:", error);
         toast.error("Failed to load email history");
@@ -100,7 +114,7 @@ const EmailDeliveryPage = () => {
                   <div className="flex-1">
                     <div className="font-medium">{item.subject}</div>
                     <div className="text-sm text-muted-foreground">
-                      To: {item.recipient} · Query: {item.query} · {item.lead_count} leads · {formatDate(item.timestamp)}
+                      To: {item.recipient} · {formatDate(item.timestamp)}
                     </div>
                   </div>
                   <div className={`px-2 py-1 rounded text-xs ${item.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
