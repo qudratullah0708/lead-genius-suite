@@ -6,13 +6,14 @@ import { Download, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import useRequireAuth from "@/hooks/useRequireAuth";
 
 interface ExportItem {
   id: string;
   query: string;
   timestamp: string;
   file_name: string;
-  download_url?: string;
+  lead_count: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -26,41 +27,27 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-// For demo purposes only - in a real app, this would come from the database
-const mockExports = [
-  {
-    id: "1",
-    query: "marketing agencies in new york",
-    timestamp: new Date().toISOString(),
-    file_name: "marketing_agencies_ny.csv"
-  },
-  {
-    id: "2",
-    query: "software developers in san francisco",
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    file_name: "sf_developers.csv"
-  },
-  {
-    id: "3",
-    query: "healthcare providers in chicago",
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
-    file_name: "chicago_healthcare.csv"
-  }
-];
-
 const ExportsPage = () => {
   const [exports, setExports] = useState<ExportItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useRequireAuth();
 
   useEffect(() => {
-    // This is a placeholder for actual database fetching
-    // In a real application, you would fetch from Supabase here
     const fetchExports = async () => {
+      if (!user) return;
+      
       try {
-        // Simulating API call with timeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setExports(mockExports);
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('exports')
+          .select('*')
+          .order('timestamp', { ascending: false });
+          
+        if (error) {
+          throw error;
+        }
+        
+        setExports(data || []);
       } catch (error) {
         console.error("Error fetching exports:", error);
         toast.error("Failed to load exports");
@@ -76,6 +63,7 @@ const ExportsPage = () => {
 
   const handleDownload = (fileItem: ExportItem) => {
     // In a real app, this would download the file from a storage bucket
+    // For now we'll just show a toast
     toast.success(`Downloading ${fileItem.file_name}`);
   };
 
@@ -117,7 +105,7 @@ const ExportsPage = () => {
                   <div>
                     <div className="font-medium">{item.query}</div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(item.timestamp)} · {item.file_name}
+                      {formatDate(item.timestamp)} · {item.file_name} · {item.lead_count} leads
                     </div>
                   </div>
                   <Button 

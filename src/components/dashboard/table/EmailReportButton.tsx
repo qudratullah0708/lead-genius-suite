@@ -15,11 +15,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { useLeadExport } from "@/hooks/useLeadExport";
+import { useLeadExport, Lead } from "@/hooks/useLeadExport";
 import { supabase } from "@/integrations/supabase/client";
 
 interface EmailReportButtonProps {
-  leads: Record<string, any>[];
+  leads: Lead[];
   searchQuery: string;
   disabled: boolean;
 }
@@ -79,23 +79,39 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
       console.log("Email function response:", data);
 
-      // Save email to history (for real implementation)
-      /* 
-      await supabase
-        .from('email_history')
-        .insert({
-          recipient: recipient,
-          subject: subject,
-          user_id: user?.id,
-          query: searchQuery,
-          lead_count: leads.length
-        });
-      */
+      // Save email to history
+      if (user) {
+        await supabase
+          .from('email_history')
+          .insert({
+            user_id: user.id,
+            recipient: recipient,
+            subject: subject,
+            query: searchQuery,
+            lead_count: leads.length,
+            status: 'delivered'
+          });
+      }
 
       toast.success("Email sent successfully!");
       setIsOpen(false);
     } catch (error) {
       console.error("Error sending email:", error);
+      
+      // Save failed email attempt to history
+      if (user) {
+        await supabase
+          .from('email_history')
+          .insert({
+            user_id: user.id,
+            recipient: recipient,
+            subject: subject,
+            query: searchQuery,
+            lead_count: leads.length,
+            status: 'failed'
+          });
+      }
+      
       toast.error("Failed to send email. Please try again.");
     } finally {
       setIsSending(false);
