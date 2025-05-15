@@ -38,7 +38,7 @@ const SearchHistory = () => {
           .from('search_history')
           .select('*')
           .order('timestamp', { ascending: false })
-          .limit(5);
+          .limit(3);
 
         if (error) throw error;
         setHistory(data || []);
@@ -68,7 +68,7 @@ const SearchHistory = () => {
           <h3 className="leadgen-card-title">Recent Searches</h3>
         </div>
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard" className="flex items-center">
+          <Link to="/history" className="flex items-center">
             <span>View All</span>
             <ArrowRight size={14} className="ml-1" />
           </Link>

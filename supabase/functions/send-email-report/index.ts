@@ -1,112 +1,122 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@1.0.0";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
+
+const resend = new Resend(Deno.env.get("RESEND"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+interface EmailReportRequest {
+  recipient_email: string;
+  subject: string;
+  message: string;
+  user_email: string;
+  query: string;
+  leads: Record<string, any>[];
+  attachCsv: boolean;
+  csvContent: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log("Email report function called");
-
   try {
-    // Get the Resend API key from the environment
-    const resendApiKey = Deno.env.get("RESEND");
-    if (!resendApiKey) {
-      console.error("Resend API key not found in environment");
-      return new Response(
-        JSON.stringify({ error: "Resend API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    console.log("Received email report request");
+    const { 
+      recipient_email, 
+      subject, 
+      message, 
+      user_email, 
+      query, 
+      leads, 
+      attachCsv, 
+      csvContent 
+    }: EmailReportRequest = await req.json();
+
+    console.log(`Request data: recipient=${recipient_email}, subject=${subject}, from=${user_email}, attachCsv=${attachCsv}`);
+    
+    // Validate required fields
+    if (!recipient_email) {
+      throw new Error("Recipient email is required");
     }
 
-    console.log("Parsing request body");
-    // Parse the request body
-    const body = await req.json();
-    const { recipient_email, subject, message, user_email, csvContent, query } = body;
+    // Create attachments if CSV is requested
+    const attachments = [];
+    if (attachCsv && csvContent) {
+      console.log("Attaching CSV file");
+      const filename = `lead_report_${query.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`;
+      const attachment = {
+        filename,
+        content: csvContent,
+      };
+      attachments.push(attachment);
+    }
 
-    console.log(`Sending email report to: ${recipient_email}`);
+    // Prepare email HTML content
+    const leadsSummary = leads.length > 0 
+      ? `<ul>${leads.slice(0, 5).map(lead => `<li>${lead.name || 'Unnamed'} - ${lead.company || 'Unknown company'}</li>`).join('')}${leads.length > 5 ? `<li>...and ${leads.length - 5} more</li>` : ''}</ul>`
+      : '<p>No leads found matching your criteria.</p>';
 
-    // Initialize Resend
-    const resend = new Resend(resendApiKey);
-
-    // Create a nice HTML email template
     const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #4f46e5; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background-color: #f9fafb; }
-            .footer { text-align: center; padding: 20px; font-size: 12px; color: #6b7280; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Lead Generation Report</h1>
-            </div>
-            <div class="content">
-              <p>Hello,</p>
-              <p>${message}</p>
-              <p>This report was generated for the search query: <strong>${query || 'All Leads'}</strong></p>
-              <p>Best regards,</p>
-              <p>LeadGen Suite Team</p>
-            </div>
-            <div class="footer">
-              <p>© ${new Date().getFullYear()} LeadGen Suite. All rights reserved.</p>
-              <p>This email was sent from ${user_email || 'LeadGen Suite'}</p>
-            </div>
-          </div>
-        </body>
-      </html>
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
+        <h2>Lead Report</h2>
+        <p>${message.replace(/\n/g, '<br>')}</p>
+        
+        <h3>Summary</h3>
+        <p>Query: <strong>${query}</strong></p>
+        <p>Total leads found: <strong>${leads.length}</strong></p>
+        
+        <h3>Sample Leads</h3>
+        ${leadsSummary}
+        
+        ${attachCsv ? '<p>Please find the complete list of leads in the attached CSV file.</p>' : ''}
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;" />
+        <p style="color: #777; font-size: 12px;">
+          This report was generated by LeadGen Agent Suite on ${new Date().toLocaleString()}<br>
+          Sent by user: ${user_email}
+        </p>
+      </div>
     `;
 
-    // Send the email with Resend
-    const { data, error } = await resend.emails.send({
-      from: "LeadGen Suite <onboarding@resend.dev>",
+    console.log("Sending email via Resend API");
+    const emailResponse = await resend.emails.send({
+      from: "LeadGen Agent <reports@leadgen-suite.com>",
       to: [recipient_email],
-      subject: subject || `Lead Report: ${query || 'All Leads'}`,
+      subject: subject,
       html: htmlContent,
-      attachments: csvContent ? [
-        {
-          filename: `leads_report_${Date.now()}.csv`,
-          content: csvContent
-        }
-      ] : undefined
+      attachments: attachments,
     });
 
-    if (error) {
-      console.error(`Resend error: ${error}`);
-      throw new Error(error.message);
-    }
+    console.log("Email sent successfully:", emailResponse);
 
-    console.log(`Email sent successfully: ${data?.id}`);
-
-    // Return success response
+    return new Response(JSON.stringify(emailResponse), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error sending email:", error);
     return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully", id: data?.id }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    // Log the detailed error
-    console.error(`Email sending error: ${error.message}`);
-    if (error.stack) {
-      console.error(`Stack trace: ${error.stack}`);
-    }
-    
-    // Return any errors
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        error: error.message || "Failed to send email",
+        stack: error.stack 
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
     );
   }
-});
+};
+
+serve(handler);

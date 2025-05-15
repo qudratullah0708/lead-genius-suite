@@ -15,6 +15,9 @@ import Pricing from "./pages/Pricing";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import HistoryPage from "./pages/History";
+import ExportsPage from "./pages/Exports";
+import EmailDeliveryPage from "./pages/EmailDelivery";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +42,27 @@ const App = () => (
               <ProtectedRoute>
                 <SidebarLayout>
                   <ScraperPage />
+                </SidebarLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/history" element={
+              <ProtectedRoute>
+                <SidebarLayout>
+                  <HistoryPage />
+                </SidebarLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/exports" element={
+              <ProtectedRoute>
+                <SidebarLayout>
+                  <ExportsPage />
+                </SidebarLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/email" element={
+              <ProtectedRoute>
+                <SidebarLayout>
+                  <EmailDeliveryPage />
                 </SidebarLayout>
               </ProtectedRoute>
             } />

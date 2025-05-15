@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
@@ -15,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport } from "@/hooks/useLeadExport";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmailReportButtonProps {
   leads: Record<string, any>[];
@@ -51,6 +53,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
     setIsSending(true);
 
     try {
+      const csvContent = attachCsv ? getCsvContent(leads) : "";
+      console.log(`Preparing to send email report to ${recipient} with ${leads.length} leads`);
+      
       const emailData = {
         recipient_email: recipient,
         subject: subject || `Lead Report: ${searchQuery}`,
@@ -59,19 +64,33 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         query: searchQuery,
         leads, 
         attachCsv, 
-        csvContent: attachCsv ? getCsvContent(leads) : "",
+        csvContent,
       };
 
-      const response = await fetch("https://email-service-bice.vercel.app/send-email/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(emailData),
+      // Call Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('send-email-report', {
+        body: emailData,
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Failed to send email");
+      if (error) {
+        console.error("Edge function error:", error);
+        throw new Error(error.message || "Failed to send email");
       }
+
+      console.log("Email function response:", data);
+
+      // Save email to history (for real implementation)
+      /* 
+      await supabase
+        .from('email_history')
+        .insert({
+          recipient: recipient,
+          subject: subject,
+          user_id: user?.id,
+          query: searchQuery,
+          lead_count: leads.length
+        });
+      */
 
       toast.success("Email sent successfully!");
       setIsOpen(false);
