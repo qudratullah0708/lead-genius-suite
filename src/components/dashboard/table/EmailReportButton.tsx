@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport } from "@/hooks/useLeadExport";
-import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/context/NotificationsContext";
 
 interface EmailReportButtonProps {
@@ -70,16 +69,21 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         csvContent,
       };
 
-      // Call Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('send-email-report', {
-        body: emailData,
+      // Call your deployed FastAPI endpoint
+      const response = await fetch('https://email-service-bice.vercel.app/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
       });
 
-      if (error) {
-        console.error("Edge function error:", error);
-        throw new Error(error.message || "Failed to send email");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to send email");
       }
 
+      const data = await response.json();
       console.log("Email function response:", data);
 
       toast.success("Email sent successfully!");
