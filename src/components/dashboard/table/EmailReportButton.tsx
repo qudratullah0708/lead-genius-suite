@@ -56,6 +56,7 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
     try {
       const csvContent = attachCsv ? getCsvContent(leads) : "";
+      
       console.log(`Preparing to send email report to ${recipient} with ${leads.length} leads`);
       
       const emailData = {
@@ -76,12 +77,6 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
       if (error) {
         console.error("Edge function error:", error);
-        toast.error("Failed to send email. Please try again.");
-        addNotification({
-          title: "Email Send Failed",
-          message: `Failed to send report to ${recipient}: ${error.message}`,
-          type: 'error',
-        });
         throw new Error(error.message || "Failed to send email");
       }
 
@@ -94,26 +89,15 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         type: 'success',
       });
 
-      // Save email to history (for real implementation)
-      /* 
-      await supabase
-        .from('email_history')
-        .insert({
-          recipient: recipient,
-          subject: subject,
-          user_id: user?.id,
-          query: searchQuery,
-          lead_count: leads.length
-        });
-      */
-
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again.");
+      const errorMessage = error.message || "Failed to send email. Please try again.";
+      
+      toast.error(errorMessage);
       addNotification({
         title: "Email Send Failed",
-        message: `Failed to send report to ${recipient}`,
+        message: `Failed to send report to ${recipient}: ${errorMessage}`,
         type: 'error',
       });
     } finally {
