@@ -1,7 +1,8 @@
 
 import { toast } from "sonner";
 
-interface Lead {
+// Define the Lead interface for strict typing
+export interface Lead {
   id: string;
   name: string;
   title: string;
@@ -13,8 +14,8 @@ interface Lead {
 }
 
 export function useLeadExport() {
-  // Convert leads to CSV content as string
-  const getCsvContent = (leads: Lead[]): string => {
+  // Convert leads to CSV content as string - accept more generic types
+  const getCsvContent = (leads: Record<string, any>[]): string => {
     if (leads.length === 0) return "";
     
     const headers = ["Name", "Title", "Company", "Email", "Phone", "Source", "Location"];
@@ -36,7 +37,7 @@ export function useLeadExport() {
     return csvContent;
   };
 
-  const exportToCsv = (leads: Lead[], searchQuery: string) => {
+  const exportToCsv = (leads: Record<string, any>[], searchQuery: string) => {
     if (leads.length === 0) {
       toast.error("No leads to export");
       return;

@@ -1,19 +1,8 @@
 
 import { useState, useEffect } from "react";
 
-interface Lead {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  email: string;
-  phone: string;
-  source: string;
-  location: string;
-}
-
-export function useTableFilters(leads: Lead[]) {
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>(leads);
+export function useTableFilters(leads: Record<string, any>[]) {
+  const [filteredLeads, setFilteredLeads] = useState<Record<string, any>[]>(leads);
   const [companyFilter, setCompanyFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");

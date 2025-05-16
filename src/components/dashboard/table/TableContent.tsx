@@ -10,21 +10,11 @@ import {
 } from "@/components/ui/table";
 import { Loader } from "lucide-react";
 
-interface Lead {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  email: string;
-  phone: string;
-  source: string;
-  location: string;
-}
-
+// Using a more generic type for leads
 interface TableContentProps {
   isLoading: boolean;
   lastSearchQuery: string;
-  filteredLeads: Lead[];
+  filteredLeads: Record<string, any>[];
 }
 
 const TableContent = ({

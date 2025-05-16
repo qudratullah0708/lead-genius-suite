@@ -8,20 +8,8 @@ import EmailReportButton from "./table/EmailReportButton";
 import { useTableFilters } from "@/hooks/useTableFilters";
 import { useLeadExport } from "@/hooks/useLeadExport";
 
-// Define the lead type
-interface Lead {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  email: string;
-  phone: string;
-  source: string;
-  location: string;
-}
-
 const ResultsTable = () => {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Record<string, any>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSearchQuery, setLastSearchQuery] = useState("");
   const { user } = useAuth();
