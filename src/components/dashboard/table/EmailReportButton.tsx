@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useLeadExport } from "@/hooks/useLeadExport";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotifications } from "@/context/NotificationsContext";
 
 interface EmailReportButtonProps {
   leads: Record<string, any>[];
@@ -34,6 +35,7 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
   const { user } = useAuth();
   const { getCsvContent } = useLeadExport();
+  const { addNotification } = useNotifications();
 
   // Automatically update subject and message based on search query or leads
   useEffect(() => {
@@ -74,10 +76,23 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
       if (error) {
         console.error("Edge function error:", error);
+        toast.error("Failed to send email. Please try again.");
+        addNotification({
+          title: "Email Send Failed",
+          message: `Failed to send report to ${recipient}: ${error.message}`,
+          type: 'error',
+        });
         throw new Error(error.message || "Failed to send email");
       }
 
       console.log("Email function response:", data);
+
+      toast.success("Email sent successfully!");
+      addNotification({
+        title: "Email Sent Successfully",
+        message: `Report sent to ${recipient}`,
+        type: 'success',
+      });
 
       // Save email to history (for real implementation)
       /* 
@@ -92,11 +107,15 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         });
       */
 
-      toast.success("Email sent successfully!");
       setIsOpen(false);
     } catch (error) {
       console.error("Error sending email:", error);
       toast.error("Failed to send email. Please try again.");
+      addNotification({
+        title: "Email Send Failed",
+        message: `Failed to send report to ${recipient}`,
+        type: 'error',
+      });
     } finally {
       setIsSending(false);
     }

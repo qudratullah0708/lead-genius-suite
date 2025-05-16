@@ -2,7 +2,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND"));
+// Make sure we're using the correct environment variable name
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,6 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     }: EmailReportRequest = await req.json();
 
     console.log(`Request data: recipient=${recipient_email}, subject=${subject}, from=${user_email}, attachCsv=${attachCsv}`);
+    console.log(`Using API key: ${Deno.env.get("RESEND_API_KEY") ? "API key is set" : "API key is missing!"}`);
     
     // Validate required fields
     if (!recipient_email) {

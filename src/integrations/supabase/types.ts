@@ -9,6 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      email_history: {
+        Row: {
+          id: string
+          lead_count: number
+          query: string
+          recipient: string
+          status: string
+          subject: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          lead_count?: number
+          query: string
+          recipient: string
+          status?: string
+          subject: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          lead_count?: number
+          query?: string
+          recipient?: string
+          status?: string
+          subject?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exports: {
+        Row: {
+          file_name: string
+          id: string
+          lead_count: number
+          query: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          file_name: string
+          id?: string
+          lead_count?: number
+          query: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          file_name?: string
+          id?: string
+          lead_count?: number
+          query?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company: string | null
