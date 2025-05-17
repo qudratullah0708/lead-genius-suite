@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import SidebarLayout from './layout/Sidebar';
+import { AppSidebar } from './layout/Sidebar';
 
 interface WrapperProps {
   children: ReactNode;
@@ -8,10 +8,11 @@ interface WrapperProps {
 
 const Wrapper = ({ children }: WrapperProps) => {
   return (
-    <div className="flex min-h-screen flex-col">
-      <SidebarLayout>
+    <div className="flex min-h-screen w-full">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col">
         {children}
-      </SidebarLayout>
+      </div>
     </div>
   );
 };

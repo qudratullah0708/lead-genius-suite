@@ -1,131 +1,193 @@
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
-import { Mail } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
-
-interface EmailItem {
-  id: string;
-  recipient: string;
-  subject: string;
-  timestamp: string;
-  status: "delivered" | "failed";
-}
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date);
-};
-
-// For demo purposes only - in a real app, this would come from the database
-const mockEmails = [
-  {
-    id: "1",
-    recipient: "client@example.com",
-    subject: "Lead Report: marketing agencies",
-    timestamp: new Date().toISOString(),
-    status: "delivered" as const
-  },
-  {
-    id: "2",
-    recipient: "boss@company.com",
-    subject: "Lead Report: tech startups",
-    timestamp: new Date(Date.now() - 86400000).toISOString(),
-    status: "delivered" as const
-  },
-  {
-    id: "3",
-    recipient: "team@ourcompany.com",
-    subject: "Weekly Lead Report",
-    timestamp: new Date(Date.now() - 172800000).toISOString(),
-    status: "failed" as const
-  }
-];
+import { useAuth } from "@/context/AuthContext";
 
 const EmailDeliveryPage = () => {
-  const [emails, setEmails] = useState<EmailItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [recipient, setRecipient] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    // This is a placeholder for actual database fetching
-    // In a real application, you would fetch from Supabase here
-    const fetchEmails = async () => {
-      try {
-        // Simulating API call with timeout
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setEmails(mockEmails);
-      } catch (error) {
-        console.error("Error fetching emails:", error);
-        toast.error("Failed to load email history");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchEmails();
+  const handleSendEmail = async () => {
+    if (!recipient) {
+      toast.error("Please enter a recipient email.");
+      return;
     }
-  }, [user]);
+
+    setIsSending(true);
+
+    try {
+      // Get the email service URL from the environment variables
+      const emailServiceUrl = import.meta.env.VITE_EMAIL_SERVICE_URL || 'https://email-service-bice.vercel.app';
+      
+      const emailData = {
+        recipient_email: recipient,
+        subject: subject || "Message from LeadGen Suite",
+        message,
+        user_email: user?.email || "",
+      };
+
+      console.log("Sending email with data:", emailData);
+      console.log("Email service URL:", emailServiceUrl);
+
+      const response = await fetch(`${emailServiceUrl}/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to send email");
+      }
+
+      toast.success("Email sent successfully!");
+      setRecipient("");
+      setSubject("");
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast.error(`Failed to send email: ${error.message}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <div className="container py-6 space-y-6 max-w-7xl animate-fade-in">
-      <div className="text-left py-8">
-        <h1 className="text-3xl font-bold tracking-tight">Email Delivery</h1>
-        <p className="text-muted-foreground mt-2">
-          Track all emails sent from your account
-        </p>
-      </div>
-
-      <div className="border rounded-lg shadow-sm">
-        <div className="p-4 border-b bg-muted/30 flex items-center">
-          <Mail size={18} className="mr-2 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Email History</h2>
+      <div className="flex justify-between items-center">
+        <div className="text-left">
+          <h1 className="text-3xl font-bold tracking-tight">Email Delivery</h1>
+          <p className="text-muted-foreground mt-2">
+            Send emails and manage your email campaigns
+          </p>
         </div>
-
-        <div className="p-4">
-          {isLoading ? (
-            Array(3).fill(0).map((_, i) => (
-              <div key={i} className="flex justify-between items-center p-3 border-b last:border-0">
-                <div className="w-full">
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
+      </div>
+      
+      <Tabs defaultValue="send" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="send">Send Email</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="send" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Compose Email</CardTitle>
+              <CardDescription>Create and send an email to your leads</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="recipient" className="text-sm font-medium">
+                  Recipient Email
+                </label>
+                <Input
+                  id="recipient"
+                  placeholder="recipient@example.com"
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                />
               </div>
-            ))
-          ) : emails.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Mail className="mx-auto h-12 w-12 mb-4 opacity-20" />
-              <p className="text-lg">No emails sent yet</p>
-              <p className="text-sm mt-1">Your sent emails will appear here</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {emails.map((item) => (
-                <div key={item.id} className="flex justify-between items-center p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.subject}</div>
-                    <div className="text-sm text-muted-foreground">
-                      To: {item.recipient} · {formatDate(item.timestamp)}
-                    </div>
-                  </div>
-                  <div className={`px-2 py-1 rounded text-xs ${item.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {item.status === 'delivered' ? 'Delivered' : 'Failed'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+              <div className="space-y-2">
+                <label htmlFor="subject" className="text-sm font-medium">
+                  Subject
+                </label>
+                <Input
+                  id="subject"
+                  placeholder="Email subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="message" className="text-sm font-medium">
+                  Message
+                </label>
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here"
+                  rows={8}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={handleSendEmail} 
+                disabled={isSending}
+                className="flex items-center"
+              >
+                {isSending ? (
+                  <>Sending...</>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Email
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <Alert variant="outline">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Email Service Information</AlertTitle>
+            <AlertDescription>
+              Emails are sent through our secure email service. Make sure your recipient's email is valid to avoid delivery issues.
+            </AlertDescription>
+          </Alert>
+        </TabsContent>
+        
+        <TabsContent value="templates">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Templates</CardTitle>
+              <CardDescription>Create and manage reusable email templates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No templates yet</h3>
+                <p className="text-muted-foreground mt-2">
+                  Create your first email template to speed up your outreach process.
+                </p>
+                <Button className="mt-4">Create Template</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Email Analytics</CardTitle>
+              <CardDescription>Track the performance of your email campaigns</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium">No email analytics yet</h3>
+                <p className="text-muted-foreground mt-2">
+                  Start sending emails to see analytics on opens, clicks, and more.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

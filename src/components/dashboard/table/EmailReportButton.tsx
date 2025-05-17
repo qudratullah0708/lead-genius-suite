@@ -58,8 +58,12 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
       
       console.log(`Preparing to send email report to ${recipient} with ${leads.length} leads`);
       
+      // Get the email service URL from the environment variables
+      const emailServiceUrl = import.meta.env.VITE_EMAIL_SERVICE_URL || 'https://email-service-bice.vercel.app';
+      
       const emailData = {
         recipient_email: recipient,
+        to: recipient,
         subject: subject || `Lead Report: ${searchQuery}`,
         message,
         user_email: user?.email || "",
@@ -67,10 +71,13 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
         leads, 
         attachCsv, 
         csvContent,
+        csvData: csvContent
       };
 
-      // Call your deployed FastAPI endpoint
-      const response = await fetch('https://email-service-bice.vercel.app/send-email', {
+      console.log("Sending email with service URL:", emailServiceUrl);
+
+      // Call the FastAPI endpoint
+      const response = await fetch(`${emailServiceUrl}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,6 +87,7 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Email API Error Response:", errorData);
         throw new Error(errorData.detail || "Failed to send email");
       }
 

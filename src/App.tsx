@@ -20,6 +20,7 @@ import HistoryPage from "./pages/History";
 import ExportsPage from "./pages/Exports";
 import EmailDeliveryPage from "./pages/EmailDelivery";
 import Settings from "./pages/Settings";
+import GoogleMapsScraperPage from "./pages/GoogleMapsScraperPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,13 @@ const App = () => (
                     </Wrapper>
                   </ProtectedRoute>
                 } />
+                <Route path="/scrapers/google-maps" element={
+                  <ProtectedRoute>
+                    <Wrapper>
+                      <GoogleMapsScraperPage />
+                    </Wrapper>
+                  </ProtectedRoute>
+                } />
                 <Route path="/history" element={
                   <ProtectedRoute>
                     <Wrapper>
@@ -63,7 +71,7 @@ const App = () => (
                     </Wrapper>
                   </ProtectedRoute>
                 } />
-                <Route path="/email-delivery" element={
+                <Route path="/email" element={
                   <ProtectedRoute>
                     <Wrapper>
                       <EmailDeliveryPage />
