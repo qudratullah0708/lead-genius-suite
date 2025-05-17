@@ -21,6 +21,7 @@ import ExportsPage from "./pages/Exports";
 import EmailDeliveryPage from "./pages/EmailDelivery";
 import Settings from "./pages/Settings";
 import GoogleMapsScraperPage from "./pages/GoogleMapsScraperPage";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <NotificationsProvider>
+            <SidebarProvider> 
             <div className="min-h-screen flex flex-col bg-background text-foreground">
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -91,6 +93,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
+           </SidebarProvider>
           </NotificationsProvider>
         </AuthProvider>
       </TooltipProvider>
