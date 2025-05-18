@@ -58,7 +58,7 @@ const GoogleMapsScraperPage = () => {
     
     try {
       // The API URL might be different in production vs development
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://email-service-bice.vercel.app';
+      const apiUrl = 'https://google-maps-api-hazel.vercel.app';
       
       const response = await fetch(`${apiUrl}/search-places/`, {
         method: 'POST',
