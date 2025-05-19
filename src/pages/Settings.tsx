@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationsContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -36,13 +36,22 @@ const Settings = () => {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
-    
     try {
-      // In a real app, you would update the user profile with Supabase
-      // await supabase.auth.updateUser({
-      //   data: { full_name: displayName, avatar_url: avatarUrl }
-      // });
-      
+      // Update auth user metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { full_name: displayName, avatar_url: avatarUrl }
+      });
+      if (authError) throw authError;
+
+      // Update profiles table as well
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ username: displayName })
+          .eq('id', user.id);
+        if (profileError) throw profileError;
+      }
+
       toast.success("Profile updated successfully");
       addNotification({
         title: "Profile Updated",
@@ -59,31 +68,24 @@ const Settings = () => {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (newPassword !== confirmPassword) {
       toast.error("New passwords don't match");
       return;
     }
-    
     if (newPassword.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
-    
     setIsUpdating(true);
-    
     try {
-      // In a real app, you would update the password with Supabase
-      // await supabase.auth.updateUser({ password: newPassword });
-      
+      const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+      if (passwordError) throw passwordError;
       toast.success("Password updated successfully");
       addNotification({
         title: "Password Updated",
         message: "Your password has been changed successfully",
         type: "success"
       });
-      
-      // Clear password fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');

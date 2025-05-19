@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Settings, Search, X } from "lucide-react";
@@ -17,11 +16,14 @@ import {
 } from "@/components/ui/popover";
 import { useNotifications, Notification } from "@/context/NotificationsContext";
 import { format } from "date-fns";
+import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { notifications, unreadCount, markAllAsRead, markAsRead, removeNotification } = useNotifications();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { user } = useAuth();
 
   const handleNotificationsOpen = (open: boolean) => {
     setNotificationsOpen(open);
@@ -66,8 +68,20 @@ const Navbar = () => {
     }
   };
 
+  // Helper to get initials
+  const getInitials = () => {
+    const displayName = user?.user_metadata?.full_name;
+    if (displayName) {
+      return displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.substring(0, 2).toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
-    <nav className="border-b border-border bg-card py-3 px-4 flex items-center justify-between">
+    <nav className="border-b border-border bg-card py-3 px-4 w-full flex items-center justify-between fixed top-0 left-0 right-0 z-40">
       <div className="flex items-center space-x-6">
         <Link to="/" className="flex items-center">
           <div className="bg-leadgen-primary rounded-md p-1 mr-2">
@@ -89,20 +103,7 @@ const Navbar = () => {
         </Link>
       </div>
 
-      <div className={`flex-1 flex justify-center transition-all duration-300 ${isSearchOpen ? 'max-w-xl' : 'max-w-0 overflow-hidden'}`}>
-        {isSearchOpen && (
-          <div className="w-full px-4 max-w-xl animate-fade-in">
-            <Input 
-              type="text"
-              placeholder="Search for leads across all platforms..."
-              className="w-full"
-              autoFocus
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 ml-auto">
         <Button 
           variant="ghost"
           size="icon"
@@ -191,9 +192,12 @@ const Navbar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
         
-        <div className="w-8 h-8 rounded-full bg-leadgen-primary text-white flex items-center justify-center ml-2">
-          <span className="font-medium text-sm">JD</span>
-        </div>
+        <Avatar className="w-8 h-8 ml-2">
+          <AvatarImage src={user?.user_metadata?.avatar_url} alt="Profile" />
+          <AvatarFallback className="font-medium text-sm">
+            {getInitials()}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </nav>
   );
