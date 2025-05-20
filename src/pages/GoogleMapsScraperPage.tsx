@@ -108,23 +108,48 @@ const GoogleMapsScraperPage = () => {
         <h1 className="text-3xl font-bold tracking-tight">Google Maps Scraper</h1>
         <p className="text-muted-foreground mt-1">Find local businesses and contact info. Configure your search below.</p>
       </div>
-      <form onSubmit={handleSearch} className="space-y-4 bg-card rounded-lg border shadow-sm p-6 max-w-xl mb-8">
-        <div>
-          <Label htmlFor="search-query">Search Query</Label>
-          <Input id="search-query" value={query} onChange={e => setQuery(e.target.value)} placeholder={'e.g. "Fast Food"'} disabled={isLoading} />
+      {/* Responsive grid: form left, features right */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Search Form */}
+        <form onSubmit={handleSearch} className="space-y-4 bg-card rounded-lg border shadow-sm p-6">
+          <div>
+            <Label htmlFor="search-query">Search Query</Label>
+            <Input id="search-query" value={query} onChange={e => setQuery(e.target.value)} placeholder={'e.g. "Fast Food"'} disabled={isLoading} />
+          </div>
+          <div>
+            <Label htmlFor="location">Location</Label>
+            <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Islamabad, Pakistan" disabled={isLoading} />
+          </div>
+          <Button className="w-full" type="submit" disabled={isLoading}>{isLoading ? "Searching..." : "Search"}</Button>
+        </form>
+        {/* Features Card */}
+        <div className="bg-card rounded-lg border shadow-sm p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-medium mb-2 flex items-center">
+              <MapPin className="h-5 w-5 mr-2" />
+              Google Maps Scraper Features
+            </h3>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground">
+              <li>Extract real-time business listings from Google Maps</li>
+              <li>Get business name, address, phone, website, rating, and category</li>
+              <li>Export results to CSV for offline use</li>
+              <li>Email reports directly from the dashboard</li>
+              <li>Fast, reliable, and easy to use</li>
+              <li>Works for any city or business type</li>
+              <li>Results are not limited to your current location</li>
+            </ul>
+          </div>
         </div>
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Islamabad, Pakistan" disabled={isLoading} />
-        </div>
-        <Button className="w-full" type="submit" disabled={isLoading}>{isLoading ? "Searching..." : "Search"}</Button>
-      </form>
+      </div>
       {error && <div className="text-red-600 mb-4">{error}</div>}
       <div className="bg-card border rounded-lg shadow-sm">
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="font-medium text-lg">Results</h3>
-          <div className="ml-2">
-            {/* Cast to unknown first to satisfy type check */}
+          <div className="ml-2 flex gap-2">
+            {/* Export Button beside Email Report */}
+            <Button variant="outline" size="sm" onClick={() => exportToCsv(results, `${query}-${location}`)} disabled={results.length === 0}>
+              Export CSV
+            </Button>
             <EmailReportButton leads={results as unknown as Record<string, unknown>[]} searchQuery={query} disabled={results.length === 0} />
           </div>
         </div>
