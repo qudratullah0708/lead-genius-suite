@@ -91,37 +91,6 @@ const ScraperPage = () => {
             location: l.location
           };
         });
-      } else if (scraperId === "google-maps") {
-        // Handle Google Maps/places API response
-        const response = await fetch("https://linked-in-service.vercel.app/extract-leads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: buildLinkedInQuery() })
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = "Failed to fetch places";
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData.detail || errorMessage;
-          } catch {
-            // ignore JSON parse error
-          }
-          throw new Error(errorMessage);
-        }
-        const data = await response.json();
-        // Map 'places' array to frontend fields (most relevant only)
-        results = (data.places || []).map((place: any, idx: number) => ({
-          id: idx + 1,
-          name: place.title,
-          address: place.address,
-          category: place.category,
-          rating: place.rating,
-          ratingCount: place.ratingCount,
-          priceLevel: place.priceLevel,
-          phone: place.phoneNumber,
-          website: place.website
-        }));
       } else {
         results = [];
       }
