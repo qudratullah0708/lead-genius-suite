@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,12 +5,13 @@ import { Search, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { Card, CardContent } from "@/components/ui/card";
 
-// const API_URL = "http://localhost:8000/api/search";  // Update this with your actual API URL
-const API_URL = "https://lead-genai-backend.vercel.app/api/search";
+const GOOGLE_MAPS_API_URL = "https://google-maps-api-hazel.vercel.app/search-places/";
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
+  const [location, setLocation] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
 
@@ -37,35 +37,22 @@ const SearchBar = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!query.trim()) {
-      toast.error("Please enter a search query");
+    if (!query.trim() || !location.trim()) {
+      toast.error("Please enter both a search query and location");
       return;
     }
-    
-    // Start loading immediately
     setIsSearching(true);
-    
-    // Dispatch a preliminary search event to trigger the loader in ResultsTable
     const searchStartEvent = new CustomEvent('leadSearchStarted', {
-      detail: { query }
+      detail: { query: `${query} in ${location}` }
     });
     window.dispatchEvent(searchStartEvent);
-    
-    toast.info(`Searching for: ${query}`);
-    
+    toast.info(`Searching for: ${query} in ${location}`);
     try {
-      console.log("Searching for:", query);
-      
-      // Make API call to the FastAPI backend
-      const response = await fetch(`${API_URL}?query=${encodeURIComponent(query)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+      const response = await fetch(GOOGLE_MAPS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, location })
       });
-      
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage;
@@ -77,66 +64,37 @@ const SearchBar = () => {
         }
         throw new Error(errorMessage);
       }
-      
       const data = await response.json();
-      const results = data.results || [];
-      
-      // Store the search in search history
-      if (user) {
-        try {
-          await supabase.from('search_history').insert({
-            user_id: user.id,
-            query: query,
-            result_count: results.length
-          });
-        } catch (error) {
-          console.error("Failed to save search history:", error);
-        }
-      }
-
-      // Store each search result in the leads table
-      if (user && results.length > 0) {
-        try {
-          const leadsToInsert = results.map((lead: any) => ({
-            user_id: user.id,
-            query: query,
-            name: lead.name || null,
-            title: lead.title || null,
-            company: lead.company || null,
-            email: lead.email || null,
-            phone: lead.phone || null,
-            source: lead.source || null,
-            location: lead.location || null
-          }));
-          
-          await supabase.from('leads').insert(leadsToInsert);
-        } catch (error) {
-          console.error("Failed to save leads:", error);
-        }
-      }
-      
-      // Dispatch the search event with the actual API results
-      const searchEvent = new CustomEvent('leadSearchCompleted', { 
-        detail: { 
-          query,
+      // Map Google Maps API response to ResultsTable format
+      const results = (data.places || []).map((place, idx) => ({
+        id: idx + 1,
+        name: place.title,
+        address: place.address,
+        phone: place.phoneNumber,
+        website: place.website,
+        rating: place.rating,
+        ratingCount: place.ratingCount,
+        category: place.category
+      }));
+      // Dispatch the search event with the mapped results
+      const searchEvent = new CustomEvent('leadSearchCompleted', {
+        detail: {
+          query: `${query} in ${location}`,
           timestamp: new Date().toISOString(),
           results: results
-        } 
+        }
       });
       window.dispatchEvent(searchEvent);
-      
-      toast.success(`Found ${results.length} leads for: "${query}"`);
+      toast.success(`Found ${results.length} places for: "${query} in ${location}"`);
     } catch (error) {
       console.error("Search error:", error);
       toast.error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
-      // Dispatch empty results to stop the loader
-      const searchEvent = new CustomEvent('leadSearchCompleted', { 
-        detail: { 
-          query,
+      const searchEvent = new CustomEvent('leadSearchCompleted', {
+        detail: {
+          query: `${query} in ${location}`,
           timestamp: new Date().toISOString(),
           results: []
-        } 
+        }
       });
       window.dispatchEvent(searchEvent);
     } finally {
@@ -146,32 +104,47 @@ const SearchBar = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto transition-all search-transition">
-      <div className="bg-white rounded-lg shadow-lg p-1 border flex items-center">
-        <div className="px-3 text-muted-foreground">
-          <Search size={20} />
-        </div>
-        <form id="search-form" onSubmit={handleSubmit} className="flex-1 flex items-center">
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for leads (e.g. 'realtors in Berlin')"
-            className="flex-1 border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
-            autoFocus
-            disabled={isSearching}
-          />
-          <Button 
-            type="submit" 
-            className="rounded-md bg-leadgen-primary hover:bg-leadgen-primary/90"
-            disabled={isSearching}
-          >
-            <span className="mr-2">{isSearching ? 'Searching...' : 'Find Leads'}</span>
-            <ArrowRight size={16} />
-          </Button>
-        </form>
-      </div>
+      <Card className="mb-4 shadow-md">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-3 md:gap-4 items-center">
+          <form id="search-form" onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3 w-full items-center">
+            <div className="flex-1 w-full">
+              <label htmlFor="search-query" className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+              <Input
+                id="search-query"
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="e.g. 'Fast Food'"
+                className="w-full border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
+                autoFocus
+                disabled={isSearching}
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label htmlFor="search-location" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <Input
+                id="search-location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. 'Islamabad, Pakistan'"
+                className="w-full border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
+                disabled={isSearching}
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="rounded-md bg-leadgen-primary hover:bg-leadgen-primary/90 flex items-center gap-2 px-6 h-12 mt-4 md:mt-0"
+              disabled={isSearching}
+            >
+              <Search size={18} />
+              <span>{isSearching ? 'Searching...' : 'Find Leads'}</span>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
       <div className="text-center mt-2 text-muted-foreground text-sm">
-        Searches across LinkedIn, Google Maps, and more using Tavily and Groq AI. Results are deduplicated automatically.
+        Searches Google Maps for real-time business listings. Results include name, address, phone, website, rating, and category.
       </div>
     </div>
   );

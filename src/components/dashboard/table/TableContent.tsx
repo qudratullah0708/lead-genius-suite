@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -14,7 +13,7 @@ import { Loader } from "lucide-react";
 interface TableContentProps {
   isLoading: boolean;
   lastSearchQuery: string;
-  filteredLeads: Record<string, any>[];
+  filteredLeads: Record<string, unknown>[];
 }
 
 const TableContent = ({
@@ -48,52 +47,43 @@ const TableContent = ({
     );
   }
 
+  // Sort by rating descending (treat missing as 0)
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
+    const ratingA = typeof a.rating === 'number' ? a.rating : 0;
+    const ratingB = typeof b.rating === 'number' ? b.rating : 0;
+    return ratingB - ratingA;
+  });
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Company</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
-          <TableHead>Source</TableHead>
-          <TableHead>Location</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {filteredLeads.map((lead) => (
-          <TableRow key={lead.id}>
-            <TableCell className="font-medium">{lead.name}</TableCell>
-            <TableCell>{lead.title}</TableCell>
-            <TableCell>{lead.company}</TableCell>
-            <TableCell>{lead.email}</TableCell>
-            <TableCell>{lead.phone}</TableCell>
-            <TableCell>
-              <div className="flex items-center">
-                <div
-                  className={`w-2 h-2 rounded-full mr-2 ${
-                    lead.source?.toLowerCase().includes("linkedin")
-                      ? "bg-[#0077B5]"
-                      : lead.source?.toLowerCase().includes("google")
-                      ? "bg-[#34A853]"
-                      : lead.source?.toLowerCase().includes("apollo")
-                      ? "bg-[#6366F1]"
-                      : lead.source?.toLowerCase().includes("reddit")
-                      ? "bg-[#FF4500]"
-                      : lead.source?.toLowerCase().includes("twitter")
-                      ? "bg-[#1DA1F2]"
-                      : "bg-gray-400"
-                  }`}
-                ></div>
-                {lead.source}
-              </div>
-            </TableCell>
-            <TableCell>{lead.location}</TableCell>
+    <div>
+      <div className="mb-2 text-sm font-semibold text-leadgen-primary text-right">
+        Showing {sortedLeads.length} lead{sortedLeads.length !== 1 ? 's' : ''}
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Address</TableHead>
+            <TableHead>Phone</TableHead>
+            <TableHead>Website</TableHead>
+            <TableHead>Rating</TableHead>
+            <TableHead>Category</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {sortedLeads.map((lead) => (
+            <TableRow key={lead.id as React.Key}>
+              <TableCell className="font-medium">{String(lead.name)}</TableCell>
+              <TableCell>{String(lead.address)}</TableCell>
+              <TableCell>{lead.phone ? String(lead.phone) : 'N/A'}</TableCell>
+              <TableCell>{lead.website ? <a href={String(lead.website)} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Visit</a> : 'N/A'}</TableCell>
+              <TableCell>{lead.rating ? `${lead.rating}${lead.ratingCount ? ` (${lead.ratingCount})` : ''}` : 'N/A'}</TableCell>
+              <TableCell>{lead.category ? String(lead.category) : 'Uncategorized'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

@@ -162,30 +162,45 @@ const GoogleMapsScraperPage = () => {
           ) : results.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No results yet. Try a search above.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Website</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Category</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {results.map((place) => (
-                  <TableRow key={place.id}>
-                    <TableCell className="font-medium">{place.name}</TableCell>
-                    <TableCell>{place.address}</TableCell>
-                    <TableCell>{place.phone || 'N/A'}</TableCell>
-                    <TableCell>{place.website ? <a href={place.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Visit</a> : 'N/A'}</TableCell>
-                    <TableCell>{place.rating ? `${place.rating}${place.ratingCount ? ` (${place.ratingCount})` : ''}` : 'N/A'}</TableCell>
-                    <TableCell>{place.category || 'Uncategorized'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div>
+              <div className="mb-2 text-sm font-semibold text-leadgen-primary text-right">
+                Showing {results.length} lead{results.length !== 1 ? 's' : ''}
+              </div>
+              {/* Sort results by rating descending */}
+              {(() => {
+                const sortedResults = [...results].sort((a, b) => {
+                  const ratingA = typeof a.rating === 'number' ? a.rating : 0;
+                  const ratingB = typeof b.rating === 'number' ? b.rating : 0;
+                  return ratingB - ratingA;
+                });
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Website</TableHead>
+                        <TableHead>Rating</TableHead>
+                        <TableHead>Category</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedResults.map((place) => (
+                        <TableRow key={place.id}>
+                          <TableCell className="font-medium">{place.name}</TableCell>
+                          <TableCell>{place.address}</TableCell>
+                          <TableCell>{place.phone || 'N/A'}</TableCell>
+                          <TableCell>{place.website ? <a href={place.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Visit</a> : 'N/A'}</TableCell>
+                          <TableCell>{place.rating ? `${place.rating}${place.ratingCount ? ` (${place.ratingCount})` : ''}` : 'N/A'}</TableCell>
+                          <TableCell>{place.category || 'Uncategorized'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                );
+              })()}
+            </div>
           )}
         </div>
       </div>
