@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,67 +32,115 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <NotificationsProvider>
-            <SidebarProvider> 
-            <div className="min-h-screen flex flex-col bg-background text-foreground">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <Dashboard />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/scrapers/:scraperId" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <ScraperPage />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/scrapers/google-maps" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <GoogleMapsScraperPage />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/history" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <HistoryPage />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/exports" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <ExportsPage />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/email" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <EmailDeliveryPage />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Wrapper>
-                      <Settings />
-                    </Wrapper>
-                  </ProtectedRoute>
-                } />
-                <Route path="/about" element={<About />} />
-                <Route path="/features" element={<Features />} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-           </SidebarProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/pricing" element={<Pricing />} />
+
+              {/* Protected routes with sidebar/layout */}
+              <Route
+                path="/dashboard"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <Dashboard />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/scrapers/:scraperId"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <ScraperPage />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/scrapers/google-maps"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <GoogleMapsScraperPage />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <HistoryPage />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/exports"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <ExportsPage />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/email"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <EmailDeliveryPage />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <SidebarProvider>
+                    <div className="min-h-screen flex flex-col bg-background text-foreground">
+                      <ProtectedRoute>
+                        <Wrapper>
+                          <Settings />
+                        </Wrapper>
+                      </ProtectedRoute>
+                    </div>
+                  </SidebarProvider>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </NotificationsProvider>
         </AuthProvider>
       </TooltipProvider>

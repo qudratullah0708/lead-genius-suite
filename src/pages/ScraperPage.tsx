@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ResultsTable from "@/components/dashboard/ResultsTable";
 import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
 
 const ScraperPage = () => {
   const { scraperId } = useParams();
   const { user } = useAuth();
+
+  // Add state for form fields
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Convert the scraperID to a properly formatted name
   const getScraperName = (id: string | undefined) => {
@@ -28,6 +33,107 @@ const ScraperPage = () => {
   
   const scraperName = getScraperName(scraperId);
   
+  // Helper to build the query string for LinkedIn
+  const buildLinkedInQuery = () => {
+    let q = query;
+    if (location) q += ` in ${location}`;
+    return q;
+  };
+
+  // Handler for Start Scraping
+  const handleStartScraping = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) {
+      window.dispatchEvent(new CustomEvent('leadSearchCompleted', { detail: { query, timestamp: new Date().toISOString(), results: [] } }));
+      return;
+    }
+    setIsLoading(true);
+    window.dispatchEvent(new CustomEvent('leadSearchStarted', { detail: { query } }));
+    try {
+      let results = [];
+      if (scraperId === "linkedin") {
+        const response = await fetch("https://linked-in-service.vercel.app/extract-leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: buildLinkedInQuery() })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = "Failed to fetch leads";
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.detail || errorMessage;
+          } catch {
+            // ignore JSON parse error
+          }
+          throw new Error(errorMessage);
+        }
+        const data = await response.json();
+        // Map backend fields to frontend fields
+        results = (data.leads || []).map((lead: unknown, idx: number) => {
+          const l = lead as {
+            name: string | null;
+            title: string | null;
+            organization: string | null;
+            email: string | null;
+            phone: string | null;
+            url: string | null;
+            location: string | null;
+          };
+          return {
+            id: idx + 1,
+            name: l.name,
+            title: l.title,
+            company: l.organization,
+            email: l.email,
+            phone: l.phone,
+            source: l.url,
+            location: l.location
+          };
+        });
+      } else if (scraperId === "google-maps") {
+        // Handle Google Maps/places API response
+        const response = await fetch("https://linked-in-service.vercel.app/extract-leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: buildLinkedInQuery() })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = "Failed to fetch places";
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.detail || errorMessage;
+          } catch {
+            // ignore JSON parse error
+          }
+          throw new Error(errorMessage);
+        }
+        const data = await response.json();
+        // Map 'places' array to frontend fields (most relevant only)
+        results = (data.places || []).map((place: any, idx: number) => ({
+          id: idx + 1,
+          name: place.title,
+          address: place.address,
+          category: place.category,
+          rating: place.rating,
+          ratingCount: place.ratingCount,
+          priceLevel: place.priceLevel,
+          phone: place.phoneNumber,
+          website: place.website
+        }));
+      } else {
+        results = [];
+      }
+      window.dispatchEvent(new CustomEvent('leadSearchCompleted', { detail: { query: buildLinkedInQuery(), timestamp: new Date().toISOString(), results } }));
+    } catch (error: unknown) {
+      window.dispatchEvent(new CustomEvent('leadSearchCompleted', { detail: { query: buildLinkedInQuery(), timestamp: new Date().toISOString(), results: [] } }));
+      alert(error instanceof Error ? error.message : JSON.stringify(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="container py-6 max-w-7xl animate-fade-in">
       <div className="mb-6">
@@ -45,29 +151,19 @@ const ScraperPage = () => {
         <TabsContent value="search" className="animate-slide-in">
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-4 bg-card rounded-lg border shadow-sm p-6">
-              <div>
-                <Label htmlFor="search-query">Search Query</Label>
-                <Input id="search-query" placeholder={`e.g. "Realtors in Berlin"`} />
-              </div>
-              
-              <div>
-                <Label htmlFor="location">Location</Label>
-                <Input id="location" placeholder="e.g. Berlin, Germany" />
-              </div>
-              
-              <div>
-                <Label htmlFor="industry">Industry/Keywords</Label>
-                <Input id="industry" placeholder="e.g. real estate, property" />
-              </div>
-              
-              <div>
-                <Label htmlFor="filters">Advanced Filters</Label>
-                <Textarea id="filters" placeholder="Add any specific filters or criteria" />
-              </div>
-              
-              <div className="pt-2">
-                <Button className="w-full">Start Scraping</Button>
-              </div>
+              <form onSubmit={handleStartScraping} className="space-y-4">
+                <div>
+                  <Label htmlFor="search-query">Search Query</Label>
+                  <Input id="search-query" value={query} onChange={e => setQuery(e.target.value)} placeholder={'e.g. "Realtors"'} disabled={isLoading} />
+                </div>
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Berlin, Germany" disabled={isLoading} />
+                </div>
+                <div className="pt-2">
+                  <Button className="w-full" type="submit" disabled={isLoading}>{isLoading ? "Scraping..." : "Start Scraping"}</Button>
+                </div>
+              </form>
             </div>
             
             <div className="space-y-4">

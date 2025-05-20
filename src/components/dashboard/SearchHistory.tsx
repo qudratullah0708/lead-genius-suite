@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, History, Loader } from "lucide-react";
@@ -37,8 +36,8 @@ const SearchHistory = () => {
         const { data, error } = await supabase
           .from('search_history')
           .select('*')
-          .order('timestamp', { ascending: false })
-          .limit(3);
+          .eq('user_id', user.id)
+          .order('timestamp', { ascending: false });
 
         if (error) throw error;
         setHistory(data || []);

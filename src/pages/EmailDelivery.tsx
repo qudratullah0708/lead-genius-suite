@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,15 +10,17 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 const EmailDeliveryPage = () => {
-  const [recipient, setRecipient] = useState("");
+  const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const { user } = useAuth();
+
+  // Set recipient to logged-in user's email
+  const recipient = user?.email || "";
 
   const handleSendEmail = async () => {
     if (!recipient) {
-      toast.error("Please enter a recipient email.");
+      toast.error("No recipient email found for your account.");
       return;
     }
 
@@ -53,7 +54,6 @@ const EmailDeliveryPage = () => {
       }
 
       toast.success("Email sent successfully!");
-      setRecipient("");
       setSubject("");
       setMessage("");
     } catch (error) {
@@ -95,9 +95,9 @@ const EmailDeliveryPage = () => {
                 </label>
                 <Input
                   id="recipient"
-                  placeholder="recipient@example.com"
                   value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
+                  disabled
+                  readOnly
                 />
               </div>
               <div className="space-y-2">

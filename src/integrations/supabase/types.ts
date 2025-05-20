@@ -139,6 +139,7 @@ export type Database = {
           result_count: number | null
           timestamp: string | null
           user_id: string
+          source?: string | null
         }
         Insert: {
           id?: string
@@ -146,6 +147,7 @@ export type Database = {
           result_count?: number | null
           timestamp?: string | null
           user_id: string
+          source?: string | null
         }
         Update: {
           id?: string
@@ -153,6 +155,7 @@ export type Database = {
           result_count?: number | null
           timestamp?: string | null
           user_id?: string
+          source?: string | null
         }
         Relationships: []
       }

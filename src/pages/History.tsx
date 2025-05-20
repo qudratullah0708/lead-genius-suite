@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -39,6 +38,7 @@ const HistoryPage = () => {
         const { data, error } = await supabase
           .from('search_history')
           .select('*')
+          .eq('user_id', user.id)
           .order('timestamp', { ascending: false });
 
         if (error) throw error;

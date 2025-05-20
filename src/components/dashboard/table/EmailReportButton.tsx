@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
@@ -19,14 +18,13 @@ import { useLeadExport } from "@/hooks/useLeadExport";
 import { useNotifications } from "@/context/NotificationsContext";
 
 interface EmailReportButtonProps {
-  leads: Record<string, any>[];
+  leads: Record<string, unknown>[];
   searchQuery: string;
   disabled: boolean;
 }
 
 const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [recipient, setRecipient] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [attachCsv, setAttachCsv] = useState(true);
@@ -35,6 +33,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
   const { user } = useAuth();
   const { getCsvContent } = useLeadExport();
   const { addNotification } = useNotifications();
+
+  // Set recipient to logged-in user's email
+  const recipient = user?.email || "";
 
   // Automatically update subject and message based on search query or leads
   useEffect(() => {
@@ -47,7 +48,7 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
 
   const handleSendEmail = async () => {
     if (!recipient) {
-      toast.error("Please enter a recipient email.");
+      toast.error("No recipient email found for your account.");
       return;
     }
 
@@ -102,9 +103,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
       });
 
       setIsOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending email:", error);
-      const errorMessage = error.message || "Failed to send email. Please try again.";
+      const errorMessage = (error instanceof Error && error.message) ? error.message : "Failed to send email. Please try again.";
       
       toast.error(errorMessage);
       addNotification({
@@ -135,9 +136,9 @@ const EmailReportButton = ({ leads, searchQuery, disabled }: EmailReportButtonPr
               <Label htmlFor="recipient">Recipient Email</Label>
               <Input
                 id="recipient"
-                placeholder="recipient@example.com"
                 value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
+                disabled
+                readOnly
               />
             </div>
 
